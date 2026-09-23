@@ -1,0 +1,110 @@
+[
+  {
+    "loss": 0.3,
+    "method": "cirda",
+    "edge_f1": 0.962,
+    "blast_recall": 0.955,
+    "blast_precision": 1.0,
+    "false_safe": 0.0,
+    "decision_coverage": 0.973
+  },
+  {
+    "loss": 0.3,
+    "method": "direct_union",
+    "edge_f1": 0.962,
+    "blast_recall": 0.938,
+    "blast_precision": 1.0,
+    "false_safe": 0.025,
+    "decision_coverage": 1.0
+  },
+  {
+    "loss": 0.3,
+    "method": "trace_only",
+    "edge_f1": 0.428,
+    "blast_recall": 0.123,
+    "blast_precision": 0.654,
+    "false_safe": 0.573,
+    "decision_coverage": 1.0
+  },
+  {
+    "loss": 0.3,
+    "method": "weak_union",
+    "edge_f1": 0.968,
+    "blast_recall": 0.957,
+    "blast_precision": 1.0,
+    "false_safe": 0.017,
+    "decision_coverage": 1.0
+  },
+  {
+    "loss": 0.45,
+    "method": "cirda",
+    "edge_f1": 0.916,
+    "blast_recall": 0.863,
+    "blast_precision": 1.0,
+    "false_safe": 0.0,
+    "decision_coverage": 0.928
+  },
+  {
+    "loss": 0.45,
+    "method": "direct_union",
+    "edge_f1": 0.916,
+    "blast_recall": 0.847,
+    "blast_precision": 1.0,
+    "false_safe": 0.076,
+    "decision_coverage": 1.0
+  },
+  {
+    "loss": 0.45,
+    "method": "trace_only",
+    "edge_f1": 0.374,
+    "blast_recall": 0.069,
+    "blast_precision": 0.695,
+    "false_safe": 0.622,
+    "decision_coverage": 1.0
+  },
+  {
+    "loss": 0.45,
+    "method": "weak_union",
+    "edge_f1": 0.927,
+    "blast_recall": 0.866,
+    "blast_precision": 1.0,
+    "false_safe": 0.062,
+    "decision_coverage": 1.0
+  },
+  {
+    "loss": 0.6,
+    "method": "cirda",
+    "edge_f1": 0.83,
+    "blast_recall": 0.682,
+    "blast_precision": 1.0,
+    "false_safe": 0.0,
+    "decision_coverage": 0.843
+  },
+  {
+    "loss": 0.6,
+    "method": "direct_union",
+    "edge_f1": 0.83,
+    "blast_recall": 0.675,
+    "blast_precision": 1.0,
+    "false_safe": 0.155,
+    "decision_coverage": 1.0
+  },
+  {
+    "loss": 0.6,
+    "method": "trace_only",
+    "edge_f1": 0.318,
+    "blast_recall": 0.039,
+    "blast_precision": 0.654,
+    "false_safe": 0.665,
+    "decision_coverage": 1.0
+  },
+  {
+    "loss": 0.6,
+    "method": "weak_union",
+    "edge_f1": 0.839,
+    "blast_recall": 0.688,
+    "blast_precision": 1.0,
+    "false_safe": 0.15,
+    "decision_coverage": 1.0
+  }
+]

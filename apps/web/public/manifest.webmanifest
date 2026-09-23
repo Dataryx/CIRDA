@@ -1,0 +1,16 @@
+{
+  "name": "CIRDA Dashboard",
+  "short_name": "CIRDA",
+  "description": "Calibrated Inference for Risk-aware Decommissioning Analysis",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4f46e5",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

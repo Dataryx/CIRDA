@@ -1,0 +1,44 @@
+[project]
+name = "cirda-ingest"
+version = "0.1.0"
+description = "CIRDA evidence ingest worker"
+requires-python = ">=3.12"
+dependencies = [
+    "cirda-core",
+    "aiokafka>=0.11",
+    "httpx",
+    "structlog",
+    "prometheus-client",
+    "pydantic-settings",
+    "sqlalchemy[asyncio]>=2.0",
+    "asyncpg",
+    "redis",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24",
+    "pytest-cov>=5.0",
+    "aiosqlite",
+    "anyio",
+]
+
+[project.scripts]
+cirda-ingest = "cirda_ingest.main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/cirda_ingest"]
+
+[tool.uv.sources]
+cirda-core = { workspace = true }
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["src"]
+filterwarnings = ["ignore::DeprecationWarning"]

@@ -1,0 +1,14 @@
+{{- if .Values.api.pdb.minAvailable }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "cirda.fullname" . }}-api
+  labels:
+    {{- include "cirda.labels" . | nindent 4 }}
+spec:
+  minAvailable: {{ .Values.api.pdb.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "cirda.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: api
+{{- end }}

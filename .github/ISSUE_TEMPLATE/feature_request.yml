@@ -1,0 +1,52 @@
+name: Feature Request
+description: Suggest an enhancement to CIRDA
+title: "[Feature]: "
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: Describe the problem and proposed solution. Link paper sections or ADRs if relevant.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What user or operational problem does this solve?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed Solution
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - inference / graph
+        - coverage estimation
+        - decision gate
+        - ingest pipeline
+        - API / contracts
+        - web UI
+        - benchmarks
+        - operations / deploy
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: paper
+    attributes:
+      label: Paper Alignment
+      options:
+        - label: This aligns with a claim in the CIRDA paper
+        - label: This is an engineering improvement outside paper scope

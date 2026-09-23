@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "cirda.fullname" . }}-config
+  labels:
+    {{- include "cirda.labels" . | nindent 4 }}
+data:
+  CIRDA_APP_ENV: {{ .Values.config.appEnv | quote }}
+  CIRDA_AUTH_MODE: {{ .Values.config.authMode | quote }}
+  CIRDA_EVENT_BUS: {{ .Values.config.eventBus | quote }}
+  CIRDA_CORS_ORIGINS: {{ .Values.config.corsOrigins | quote }}
+  CIRDA_OTEL_ENABLED: {{ .Values.config.otelEnabled | quote }}
+  CIRDA_OTEL_ENDPOINT: {{ .Values.config.otelEndpoint | quote }}
+  CIRDA_SCHEDULER_ENABLED: {{ .Values.config.schedulerEnabled | quote }}
+  CIRDA_THETA_C: {{ .Values.config.thetaC | quote }}
+  CIRDA_THETA_P: {{ .Values.config.thetaP | quote }}
+  CIRDA_C_MIN: {{ .Values.config.cMin | quote }}
+  CIRDA_LOG_JSON: {{ .Values.config.logJson | default "false" | quote }}
+  CIRDA_RATE_LIMIT_RPM: {{ .Values.config.rateLimitRpm | default "600" | quote }}

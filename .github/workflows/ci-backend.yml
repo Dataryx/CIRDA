@@ -1,0 +1,62 @@
+name: CI Backend
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'packages/**'
+      - 'apps/api/**'
+      - 'apps/ingest-worker/**'
+      - 'scripts/**'
+      - 'pyproject.toml'
+      - '.github/workflows/ci-backend.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'packages/**'
+      - 'apps/api/**'
+      - 'apps/ingest-worker/**'
+      - 'scripts/**'
+      - 'pyproject.toml'
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Sync dependencies
+        run: uv sync --all-packages --group dev
+
+      - name: Constants parity
+        run: uv run python scripts/check_constants_parity.py
+
+      - name: Lint
+        run: |
+          uv run ruff check packages apps scripts
+          uv run ruff format --check packages apps scripts
+
+      - name: Unit tests
+        run: |
+          uv run pytest packages/cirda-core/tests packages/cirda-bench/tests apps/api/tests/unit -q --tb=short
+
+      - name: Integration tests
+        env:
+          CIRDA_MEMORY_STORE: "true"
+          CIRDA_EVENT_BUS: inmemory
+          CIRDA_AUTH_MODE: dev
+          CIRDA_SCHEDULER_ENABLED: "false"
+        run: uv run pytest apps/api/tests/integration -q --tb=short
+
+      - name: Benchmark smoke
+        run: |
+          uv run pytest packages/cirda-bench/tests/test_determinism.py \
+            packages/cirda-bench/tests/test_reproduces_table_ii.py -q --tb=short

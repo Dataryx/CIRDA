@@ -1,0 +1,52 @@
+api:
+  replicaCount: 3
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 20
+    targetCPUUtilizationPercentage: 65
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: "2"
+      memory: 2Gi
+
+ingest:
+  replicaCount: 3
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 15
+    targetCPUUtilizationPercentage: 70
+
+web:
+  replicaCount: 3
+
+config:
+  appEnv: production
+  authMode: jwt
+  logJson: true
+  rateLimitRpm: 1200
+
+ingress:
+  hosts:
+    - host: cirda.prod.example.com
+      paths:
+        - path: /api
+          pathType: Prefix
+          service: api
+        - path: /
+          pathType: Prefix
+          service: web
+  tls:
+    - secretName: cirda-prod-tls
+      hosts:
+        - cirda.prod.example.com
+
+serviceMonitor:
+  enabled: true
+
+networkPolicy:
+  enabled: true

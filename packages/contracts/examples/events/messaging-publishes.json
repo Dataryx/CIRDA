@@ -1,0 +1,13 @@
+{
+  "event_id": "ex-mq-001",
+  "source": "messaging",
+  "channel": "messaging",
+  "source_id": "invoice-reconciler-agent",
+  "target_id": "invoice-queue",
+  "relation": "publishes",
+  "observed_at": "2026-09-23T09:30:00+00:00",
+  "payload": {
+    "topic": "invoice.events",
+    "partition": 0
+  }
+}

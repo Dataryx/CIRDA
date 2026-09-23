@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cirda.dev/schemas/canonical-event.schema.json",
+  "title": "CanonicalEvidenceEvent",
+  "description": "Normalized evidence event after adapter processing",
+  "type": "object",
+  "required": ["event_id", "source_id", "target_id", "relation", "channel", "observed_at"],
+  "additionalProperties": false,
+  "properties": {
+    "event_id": { "type": "string", "minLength": 1 },
+    "source_id": { "type": "string", "minLength": 1 },
+    "target_id": { "type": "string", "minLength": 1 },
+    "relation": {
+      "type": "string",
+      "enum": [
+        "delegates", "calls", "reads", "writes", "publishes",
+        "consumes", "authenticates", "uses_model"
+      ]
+    },
+    "channel": {
+      "type": "string",
+      "enum": [
+        "trace", "database", "messaging", "iam", "agent_framework",
+        "temporal_correlation", "shared_resource", "workflow_window", "static_declared"
+      ]
+    },
+    "observed_at": { "type": "string", "format": "date-time" },
+    "source_type": {
+      "type": ["string", "null"],
+      "enum": ["agent", "tool", "service", "data", "queue", "credential", "model", null]
+    },
+    "target_type": {
+      "type": ["string", "null"],
+      "enum": ["agent", "tool", "service", "data", "queue", "credential", "model", null]
+    },
+    "payload_hash": { "type": ["string", "null"] }
+  }
+}

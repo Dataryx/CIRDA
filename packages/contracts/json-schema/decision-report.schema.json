@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cirda.dev/schemas/decision-report.schema.json",
+  "title": "DecisionReport",
+  "description": "CIRDA tri-state retirement decision report",
+  "type": "object",
+  "required": [
+    "decision_id", "entity_id", "verdict", "coverage", "rationale",
+    "limitations_footer", "as_of", "engine_version"
+  ],
+  "properties": {
+    "decision_id": { "type": "string" },
+    "entity_id": { "type": "string" },
+    "verdict": { "type": "string", "enum": ["UNSAFE", "SAFE", "INDETERMINATE"] },
+    "coverage": { "type": "number", "minimum": 0, "maximum": 1 },
+    "truncated": { "type": "boolean", "default": false },
+    "reason_codes": { "type": "array", "items": { "type": "string" } },
+    "rationale": {
+      "type": "object",
+      "required": ["summary"],
+      "properties": {
+        "summary": { "type": "string" },
+        "details": { "type": "array", "items": { "type": "string" } },
+        "reason_codes": { "type": "array", "items": { "type": "string" } },
+        "blast_radius": { "type": "object" },
+        "coverage_breakdown": { "type": "object" },
+        "suggested_runbook": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["stage", "description"],
+            "properties": {
+              "stage": { "type": "string" },
+              "description": { "type": "string" },
+              "entity_id": { "type": ["string", "null"] }
+            }
+          }
+        }
+      }
+    },
+    "limitations_footer": { "type": "string" },
+    "as_of": { "type": "string", "format": "date-time" },
+    "engine_version": { "type": "string" },
+    "change_type": { "type": ["string", "null"] },
+    "supersedes": { "type": ["string", "null"] },
+    "superseded_by": { "type": ["string", "null"] },
+    "created_by": { "type": ["string", "null"] },
+    "created_at": { "type": ["string", "null"], "format": "date-time" },
+    "paths": { "type": "array", "items": { "type": "object" } }
+  }
+}

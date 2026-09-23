@@ -1,0 +1,30 @@
+flowchart TB
+  subgraph public [Untrusted]
+    User[Operator Browser]
+    Telemetry[Telemetry Producers]
+  end
+
+  subgraph dmz [Ingress]
+    ING[Ingress TLS]
+  end
+
+  subgraph app [Application Namespace]
+    WEB[Web]
+    API[API]
+    ING_W[Ingest Worker]
+  end
+
+  subgraph data [Data Tier]
+    PG[(PostgreSQL)]
+    RD[(Redis)]
+    KF[(Kafka)]
+  end
+
+  User --> ING
+  ING --> WEB
+  ING --> API
+  Telemetry --> ING_W
+  ING_W --> KF
+  API --> PG
+  API --> RD
+  ING_W --> API

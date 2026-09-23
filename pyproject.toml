@@ -1,0 +1,35 @@
+[project]
+name = "cirda"
+version = "0.1.0"
+description = "CIRDA monorepo — Coverage-Informed Retirement Decision Analysis"
+requires-python = ">=3.12"
+readme = "README.md"
+license = { text = "Apache-2.0" }
+
+[tool.uv.workspace]
+members = [
+    "packages/cirda-core",
+    "packages/cirda-bench",
+    "apps/api",
+    "apps/ingest-worker",
+]
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.0",
+    "ruff>=0.8",
+    "aiosqlite",
+    "httpx",
+    "pyyaml",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["packages", "apps", "scripts"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.per-file-ignores]
+"scripts/*" = ["B008"]

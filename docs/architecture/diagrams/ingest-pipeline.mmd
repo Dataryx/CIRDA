@@ -1,0 +1,12 @@
+sequenceDiagram
+  participant K as Kafka
+  participant W as Ingest Worker
+  participant N as Normalizer
+  participant API as CIRDA API
+  participant DB as PostgreSQL
+
+  K->>W: raw JSON batch
+  W->>N: normalize(raw)
+  N->>API: POST /ingest/events/batch
+  API->>DB: upsert evidence + edge
+  API-->>W: IngestBatchResult

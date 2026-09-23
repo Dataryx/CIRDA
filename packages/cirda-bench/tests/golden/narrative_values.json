@@ -1,0 +1,17 @@
+{
+  "base_seed": 20260921,
+  "ecosystems": 30,
+  "loss_levels": [0.0, 0.15, 0.30, 0.45, 0.60],
+  "targets_per_ecosystem": 60,
+  "methods": ["trace_only", "direct_union", "weak_union", "cirda"],
+  "reference_nodes": 145,
+  "reference_agents": 50,
+  "mean_edges_150_ecosystems": 593.44,
+  "edge_count_sd": 17.29,
+  "edge_count_range": [551, 639],
+  "protocol_evaluations": 36000,
+  "cirda_theta_confirmed": 0.62,
+  "cirda_theta_possible": 0.28,
+  "cirda_c_min": 0.85,
+  "weak_union_min_observations": 8
+}

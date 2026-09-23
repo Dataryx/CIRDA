@@ -1,0 +1,112 @@
+"""Coverage repository."""
+
+from __future__ import annotations
+
+from typing import Any
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from cirda_api.db.models.channel_health import ChannelHealth as ChannelHealthModel
+from cirda_api.db.models.coverage import CoverageSnapshot
+from cirda_api.db.repositories.base import RepositoryBase, utcnow
+from cirda_api.memory.store import MemoryStore
+
+
+class CoverageRepository(RepositoryBase):
+    async def latest_snapshot(self) -> dict[str, Any] | None:
+        if self.memory:
+            if not self.memory.coverage_snapshots:
+                return None
+            return sorted(self.memory.coverage_snapshots, key=lambda s: s["captured_at"], reverse=True)[0]
+
+        assert self.session is not None
+        result = await self.session.execute(
+            select(CoverageSnapshot).order_by(CoverageSnapshot.captured_at.desc()).limit(1)
+        )
+        row = result.scalar_one_or_none()
+        return self._snapshot_dict(row) if row else None
+
+    async def add_snapshot(self, record: dict[str, Any]) -> dict[str, Any]:
+        if self.memory:
+            self.memory.coverage_snapshots.append(record)
+            return record
+
+        assert self.session is not None
+        row = CoverageSnapshot(
+            snapshot_id=record["snapshot_id"],
+            coverage=record["coverage"],
+            observed_entities=record["observed_entities"],
+            total_entities=record["total_entities"],
+            suppressed_channels=record.get("suppressed_channels", []),
+            scope=record.get("scope"),
+            captured_at=record["captured_at"],
+        )
+        self.session.add(row)
+        await self.session.commit()
+        return record
+
+    async def list_snapshots(self, *, offset: int = 0, limit: int = 20) -> tuple[list[dict[str, Any]], int]:
+        if self.memory:
+            rows = sorted(self.memory.coverage_snapshots, key=lambda s: s["captured_at"], reverse=True)
+            total = len(rows)
+            return rows[offset : offset + limit], total
+
+        assert self.session is not None
+        q = select(CoverageSnapshot).order_by(CoverageSnapshot.captured_at.desc())
+        result = await self.session.execute(q.offset(offset).limit(limit))
+        items = [self._snapshot_dict(r) for r in result.scalars().all()]
+        total = len((await self.session.execute(select(CoverageSnapshot))).scalars().all())
+        return items, total
+
+    async def list_channel_health(self) -> list[dict[str, Any]]:
+        if self.memory:
+            return list(self.memory.channel_health.values())
+
+        assert self.session is not None
+        result = await self.session.execute(select(ChannelHealthModel))
+        return [
+            {
+                "channel": r.channel,
+                "health_score": r.health_score,
+                "lag_seconds": r.lag_seconds,
+                "last_checked_at": r.last_checked_at,
+                "details": r.details,
+            }
+            for r in result.scalars().all()
+        ]
+
+    async def upsert_channel_health(self, channel: str, health_score: float, lag_seconds: float = 0.0) -> None:
+        now = utcnow()
+        if self.memory:
+            self.memory.channel_health[channel] = {
+                "channel": channel,
+                "health_score": health_score,
+                "lag_seconds": lag_seconds,
+                "last_checked_at": now,
+            }
+            return
+
+        assert self.session is not None
+        row = await self.session.get(ChannelHealthModel, channel)
+        if row:
+            row.health_score = health_score
+            row.lag_seconds = lag_seconds
+            row.last_checked_at = now
+        else:
+            self.session.add(
+                ChannelHealthModel(channel=channel, health_score=health_score, lag_seconds=lag_seconds, last_checked_at=now)
+            )
+        await self.session.commit()
+
+    @staticmethod
+    def _snapshot_dict(row: CoverageSnapshot) -> dict[str, Any]:
+        return {
+            "snapshot_id": row.snapshot_id,
+            "coverage": row.coverage,
+            "observed_entities": row.observed_entities,
+            "total_entities": row.total_entities,
+            "suppressed_channels": row.suppressed_channels,
+            "scope": row.scope,
+            "captured_at": row.captured_at,
+        }

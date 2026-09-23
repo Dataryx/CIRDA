@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cirda.dev/schemas/coverage-estimate.schema.json",
+  "title": "CoverageEstimate",
+  "description": "Observability coverage estimate for the estate or scope",
+  "type": "object",
+  "required": ["coverage", "observed_entities", "total_entities", "meets_threshold", "c_min"],
+  "properties": {
+    "coverage": { "type": "number", "minimum": 0, "maximum": 1 },
+    "observed_entities": { "type": "integer", "minimum": 0 },
+    "total_entities": { "type": "integer", "minimum": 0 },
+    "suppressed_channels": { "type": "array", "items": { "type": "string" } },
+    "meets_threshold": { "type": "boolean" },
+    "c_min": { "type": "number", "minimum": 0, "maximum": 1 },
+    "as_of": { "type": ["string", "null"], "format": "date-time" }
+  }
+}

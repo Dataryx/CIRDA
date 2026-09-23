@@ -1,0 +1,24 @@
+{
+  "decision_id": "dec-ex-002",
+  "entity_id": "vendor-risk-agent",
+  "verdict": "INDETERMINATE",
+  "coverage": 0.62,
+  "truncated": false,
+  "reason_codes": ["COVERAGE_BELOW_C_MIN", "AMBIGUOUS_IDENTITY"],
+  "rationale": {
+    "summary": "Insufficient coverage and ambiguous entity identity; additional probes required.",
+    "details": [
+      "Coverage 0.62 below C_min 0.85",
+      "Alias vendor_risk may refer to vendor-risk-agent"
+    ],
+    "reason_codes": ["COVERAGE_BELOW_C_MIN", "AMBIGUOUS_IDENTITY"],
+    "blast_radius": { "nodes": ["vendor-db"], "max_depth": 1 },
+    "coverage_breakdown": { "trace": 0.55, "agent_framework": 0.40 },
+    "suggested_runbook": []
+  },
+  "limitations_footer": "Limitations: Absence of evidence is not evidence of absence.",
+  "as_of": "2026-09-23T10:00:00+00:00",
+  "engine_version": "0.1.0",
+  "change_type": "retirement",
+  "paths": []
+}

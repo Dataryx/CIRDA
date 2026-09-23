@@ -1,0 +1,12 @@
+apiVersion: v2
+name: cirda
+description: CIRDA — Coverage-Informed Retirement Decision Analysis
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - cirda
+  - ai-agents
+  - dependency-analysis
+maintainers:
+  - name: CIRDA Contributors

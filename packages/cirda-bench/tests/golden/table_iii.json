@@ -1,0 +1,7 @@
+[
+  {"agents": 50, "nodes": 145, "edges": 592},
+  {"agents": 100, "nodes": 293, "edges": 1210},
+  {"agents": 250, "nodes": 731, "edges": 3025},
+  {"agents": 500, "nodes": 1465, "edges": 6093},
+  {"agents": 1000, "nodes": 2930, "edges": 12263}
+]

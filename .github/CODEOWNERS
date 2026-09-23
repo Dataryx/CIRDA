@@ -1,0 +1,13 @@
+# CIRDA code owners — adjust team handles for your org
+
+* @cirda/maintainers
+
+/packages/cirda-core/ @cirda/core-engine
+/packages/cirda-bench/ @cirda/core-engine
+/apps/api/ @cirda/platform
+/apps/ingest-worker/ @cirda/platform
+/apps/web/ @cirda/frontend
+/packages/contracts/ @cirda/platform @cirda/frontend
+/deploy/ @cirda/sre
+/docs/ @cirda/maintainers
+/scripts/ @cirda/platform

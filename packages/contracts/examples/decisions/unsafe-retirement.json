@@ -1,0 +1,41 @@
+{
+  "decision_id": "dec-ex-001",
+  "entity_id": "invoice-reconciler-agent",
+  "verdict": "UNSAFE",
+  "coverage": 0.91,
+  "truncated": false,
+  "reason_codes": ["CRITICAL_REACHABLE", "COVERAGE_SUFFICIENT"],
+  "rationale": {
+    "summary": "Critical dependents reachable via confirmed edges; retirement blocked.",
+    "details": [
+      "Reachable: ledger-db (critical), payment-api (critical)",
+      "Coverage 0.91 exceeds C_min 0.85"
+    ],
+    "reason_codes": ["CRITICAL_REACHABLE"],
+    "blast_radius": {
+      "nodes": ["ledger-db", "payment-api", "invoice-queue"],
+      "max_depth": 3
+    },
+    "coverage_breakdown": {
+      "trace": 0.95,
+      "messaging": 0.72
+    },
+    "suggested_runbook": [
+      {
+        "stage": "report_and_remediate",
+        "description": "Notify finance platform team of blocked retirement",
+        "entity_id": "invoice-reconciler-agent"
+      },
+      {
+        "stage": "disable_new_work",
+        "description": "Drain invoice-queue before retrying retirement",
+        "entity_id": "invoice-queue"
+      }
+    ]
+  },
+  "limitations_footer": "Limitations: CIRDA decisions reflect observability coverage at evaluation timestamp.",
+  "as_of": "2026-09-23T10:00:00+00:00",
+  "engine_version": "0.1.0",
+  "change_type": "retirement",
+  "paths": []
+}

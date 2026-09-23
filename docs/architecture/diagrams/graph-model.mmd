@@ -1,0 +1,17 @@
+graph LR
+  subgraph confirmed [Confirmed Layer]
+    A1[invoice-reconciler-agent]
+    D1[ledger-db]
+    A1 -->|writes S>=0.62| D1
+  end
+
+  subgraph possible [Possible Layer]
+    A2[vendor-risk-agent]
+    D2[vendor-db]
+    A2 -.->|reads S=0.35| D2
+  end
+
+  subgraph decay [Decay]
+    E[Edge confidence]
+    E -->|half-life| E2[Decayed S]
+  end

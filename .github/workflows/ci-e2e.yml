@@ -1,0 +1,62 @@
+name: CI E2E
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: apps/web/pnpm-lock.yaml
+
+      - name: Bootstrap
+        run: |
+          uv sync --all-packages --group dev
+          cd apps/web && pnpm install --frozen-lockfile
+
+      - name: Start API (lite)
+        env:
+          CIRDA_MEMORY_STORE: "true"
+          CIRDA_EVENT_BUS: inmemory
+          CIRDA_AUTH_MODE: dev
+          CIRDA_SCHEDULER_ENABLED: "false"
+        run: |
+          cd apps/api
+          uv run uvicorn cirda_api.asgi:app --host 0.0.0.0 --port 8000 &
+          sleep 5
+          curl -sf http://localhost:8000/api/v1/health
+
+      - name: Seed demo estate
+        env:
+          CIRDA_ENV: local
+        run: uv run python scripts/seed_demo_estate.py
+
+      - name: Install Playwright
+        working-directory: apps/web
+        run: pnpm exec playwright install chromium --with-deps
+
+      - name: Run E2E
+        working-directory: apps/web
+        env:
+          VITE_API_BASE_URL: http://localhost:8000
+        run: pnpm e2e

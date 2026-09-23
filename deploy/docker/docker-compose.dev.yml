@@ -1,0 +1,100 @@
+# CIRDA dev stack with hot reload — mount source, skip production builds
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: cirda
+      POSTGRES_PASSWORD: cirda
+      POSTGRES_DB: cirda
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata_dev:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  redpanda:
+    image: docker.redpanda.com/redpandadata/redpanda:v24.2.4
+    command:
+      - redpanda
+      - start
+      - --overprovisioned
+      - --smp=1
+      - --memory=512M
+      - --reserve-memory=0M
+      - --node-id=0
+      - --check=false
+      - --kafka-addr=PLAINTEXT://0.0.0.0:9092
+      - --advertise-kafka-addr=PLAINTEXT://redpanda:9092
+    ports:
+      - "9092:9092"
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.114.0
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+
+  api:
+    image: python:3.12-slim
+    working_dir: /workspace
+    command: >
+      bash -c "pip install uv && uv sync --all-packages &&
+      cd apps/api && uv run uvicorn cirda_api.asgi:app --reload --host 0.0.0.0 --port 8000"
+    volumes:
+      - ../..:/workspace
+    environment:
+      CIRDA_APP_ENV: development
+      CIRDA_DATABASE_URL: postgresql+asyncpg://cirda:cirda@postgres:5432/cirda
+      CIRDA_REDIS_URL: redis://redis:6379/0
+      CIRDA_EVENT_BUS: redis
+      CIRDA_AUTH_MODE: dev
+      CIRDA_CORS_ORIGINS: http://localhost:5173,http://localhost:3000
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - redis
+
+  ingest-worker:
+    image: python:3.12-slim
+    working_dir: /workspace
+    command: >
+      bash -c "pip install uv && uv sync --all-packages &&
+      cd apps/ingest-worker && uv run python -m cirda_ingest.main || uv run cirda-ingest"
+    volumes:
+      - ../..:/workspace
+    environment:
+      CIRDA_APP_ENV: development
+      CIRDA_EVENT_BUS: kafka
+      CIRDA_KAFKA_BOOTSTRAP_SERVERS: redpanda:9092
+      CIRDA_DATABASE_URL: postgresql+asyncpg://cirda:cirda@postgres:5432/cirda
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redpanda
+      - postgres
+      - api
+
+  web:
+    image: node:22-alpine
+    working_dir: /workspace/apps/web
+    command: sh -c "corepack enable && corepack prepare pnpm@9.12.3 --activate && pnpm install && pnpm dev --host 0.0.0.0"
+    volumes:
+      - ../../apps/web:/workspace/apps/web
+      - ../../packages:/workspace/packages
+    environment:
+      VITE_API_BASE_URL: http://localhost:8000
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api
+
+volumes:
+  pgdata_dev:

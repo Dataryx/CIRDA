@@ -1,0 +1,1289 @@
+openapi: 3.1.0
+info:
+  title: CIRDA Control Plane API
+  version: 0.1.0
+  description: |
+    Coverage-Informed Retirement Decision Analysis control plane.
+    Tri-state decisions (UNSAFE / SAFE / INDETERMINATE) with explicit coverage.
+  license:
+    name: Apache-2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+
+servers:
+  - url: http://localhost:8000
+    description: Local development
+  - url: https://cirda.example.com
+    description: Production
+
+tags:
+  - name: health
+  - name: ingest
+  - name: entities
+  - name: graph
+  - name: edges
+  - name: evidence
+  - name: analysis
+  - name: decisions
+  - name: coverage
+  - name: calibration
+  - name: benchmarks
+  - name: audit
+  - name: admin
+  - name: stream
+  - name: metrics
+
+security:
+  - bearerAuth: []
+  - apiKeyAuth: []
+
+paths:
+  /api/v1/health:
+    get:
+      tags: [health]
+      summary: Liveness check
+      security: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /api/v1/health/ready:
+    get:
+      tags: [health]
+      summary: Readiness check
+      responses:
+        '200':
+          description: Ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadinessResponse'
+
+  /api/v1/ingest/events:
+    post:
+      tags: [ingest]
+      summary: Ingest single evidence event
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IngestEventRequest'
+            examples:
+              trace:
+                value:
+                  raw:
+                    event_id: ex-001
+                    source: trace
+                    source_id: agent-a
+                    target_id: service-b
+                    relation: calls
+                    observed_at: '2026-09-23T10:00:00+00:00'
+      responses:
+        '200':
+          description: Ingest result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IngestResult'
+
+  /api/v1/ingest/events/batch:
+    post:
+      tags: [ingest]
+      summary: Ingest batch of evidence events
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IngestBatchRequest'
+      responses:
+        '200':
+          description: Batch result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IngestBatchResult'
+
+  /api/v1/entities:
+    get:
+      tags: [entities]
+      summary: List entities
+      parameters:
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/Limit'
+        - name: entity_type
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Entity list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityListResponse'
+    post:
+      tags: [entities]
+      summary: Create or upsert entity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EntityCreateRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityResponse'
+
+  /api/v1/entities/{entity_id}:
+    get:
+      tags: [entities]
+      summary: Get entity by ID
+      parameters:
+        - $ref: '#/components/parameters/EntityId'
+      responses:
+        '200':
+          description: Entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/graph:
+    get:
+      tags: [graph]
+      summary: Get dependency graph payload
+      parameters:
+        - name: layer
+          in: query
+          schema:
+            type: string
+            enum: [confirmed, possible, all]
+        - $ref: '#/components/parameters/AsOf'
+      responses:
+        '200':
+          description: Graph
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GraphPayload'
+
+  /api/v1/edges:
+    get:
+      tags: [edges]
+      summary: List edges
+      parameters:
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/Limit'
+        - name: source_id
+          in: query
+          schema:
+            type: string
+        - name: target_id
+          in: query
+          schema:
+            type: string
+        - name: layer
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Edge list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeListResponse'
+
+  /api/v1/edges/{edge_id}:
+    get:
+      tags: [edges]
+      summary: Get edge by ID
+      parameters:
+        - name: edge_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Edge
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/edges/{edge_id}/evidence:
+    get:
+      tags: [edges]
+      summary: List evidence for edge
+      parameters:
+        - name: edge_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Evidence events
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/EvidenceEventResponse'
+
+  /api/v1/evidence:
+    get:
+      tags: [evidence]
+      summary: List evidence events
+      parameters:
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/Limit'
+        - name: source_id
+          in: query
+          schema:
+            type: string
+        - name: channel
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Evidence list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvidenceListResponse'
+
+  /api/v1/evidence/{event_id}:
+    get:
+      tags: [evidence]
+      summary: Get evidence event
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Evidence event
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvidenceEventResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/analysis/blast-radius:
+    post:
+      tags: [analysis]
+      summary: Compute blast radius from source entity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BlastRadiusRequest'
+      responses:
+        '200':
+          description: Blast radius result
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /api/v1/analysis/reachability:
+    post:
+      tags: [analysis]
+      summary: Compute reachability from source entity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReachabilityRequest'
+      responses:
+        '200':
+          description: Reachability result
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /api/v1/analysis/paths:
+    get:
+      tags: [analysis]
+      summary: Query paths between entities
+      parameters:
+        - name: source_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: target_id
+          in: query
+          schema:
+            type: string
+        - $ref: '#/components/parameters/AsOf'
+      responses:
+        '200':
+          description: Path query result
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /api/v1/decisions/evaluate:
+    post:
+      tags: [decisions]
+      summary: Evaluate retirement decision for entity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DecisionEvaluateRequest'
+      responses:
+        '201':
+          description: Decision report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DecisionReport'
+
+  /api/v1/decisions/by-entity/{entity_id}:
+    get:
+      tags: [decisions]
+      summary: List decisions for entity
+      parameters:
+        - $ref: '#/components/parameters/EntityId'
+        - $ref: '#/components/parameters/Offset'
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Decision list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DecisionListResponse'
+
+  /api/v1/decisions/{decision_id}:
+    get:
+      tags: [decisions]
+      summary: Get decision by ID
+      parameters:
+        - name: decision_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Decision report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DecisionReport'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/decisions/{decision_id}/rerun:
+    post:
+      tags: [decisions]
+      summary: Rerun decision evaluation
+      parameters:
+        - name: decision_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: New decision report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DecisionReport'
+
+  /api/v1/coverage:
+    get:
+      tags: [coverage]
+      summary: Get coverage estimate
+      parameters:
+        - $ref: '#/components/parameters/AsOf'
+      responses:
+        '200':
+          description: Coverage estimate
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CoverageEstimate'
+
+  /api/v1/coverage/snapshots:
+    get:
+      tags: [coverage]
+      summary: List coverage snapshots
+      parameters:
+        - $ref: '#/components/parameters/Offset'
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Snapshot list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SnapshotListResponse'
+
+  /api/v1/coverage/channel-health:
+    get:
+      tags: [coverage]
+      summary: Channel health status
+      responses:
+        '200':
+          description: Channel health
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  channels:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+
+  /api/v1/calibration:
+    get:
+      tags: [calibration]
+      summary: Get calibration profile
+      responses:
+        '200':
+          description: Calibration profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CalibrationProfile'
+    put:
+      tags: [calibration]
+      summary: Update calibration profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CalibrationProfile'
+      responses:
+        '200':
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CalibrationProfile'
+
+  /api/v1/benchmarks/runs:
+    get:
+      tags: [benchmarks]
+      summary: List benchmark runs
+      parameters:
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Run list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BenchmarkRunListResponse'
+    post:
+      tags: [benchmarks]
+      summary: Start benchmark run
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BenchmarkRunCreate'
+      responses:
+        '201':
+          description: Run started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BenchmarkRunResponse'
+
+  /api/v1/benchmarks/runs/{run_id}:
+    get:
+      tags: [benchmarks]
+      summary: Get benchmark run results
+      parameters:
+        - name: run_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Results envelope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BenchmarkResultsEnvelope'
+
+  /api/v1/audit:
+    get:
+      tags: [audit]
+      summary: Query audit log
+      parameters:
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/Limit'
+        - name: action
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Audit entries
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditListResponse'
+
+  /api/v1/admin/snapshot:
+    post:
+      tags: [admin]
+      summary: Trigger graph/coverage snapshot job
+      responses:
+        '200':
+          description: Job accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+
+  /api/v1/admin/decay:
+    post:
+      tags: [admin]
+      summary: Trigger edge decay job
+      responses:
+        '200':
+          description: Job accepted
+
+  /api/v1/admin/coverage:
+    post:
+      tags: [admin]
+      summary: Trigger coverage recompute job
+      responses:
+        '200':
+          description: Job accepted
+
+  /api/v1/admin/recalibration:
+    post:
+      tags: [admin]
+      summary: Trigger recalibration job
+      responses:
+        '200':
+          description: Job accepted
+
+  /api/v1/admin/jobs:
+    get:
+      tags: [admin]
+      summary: List scheduled jobs status
+      responses:
+        '200':
+          description: Job status
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /api/v1/stream:
+    get:
+      tags: [stream]
+      summary: WebSocket event stream
+      description: Upgrade to WebSocket for live graph/evidence/decision events.
+      responses:
+        '101':
+          description: Switching Protocols
+
+  /metrics:
+    get:
+      tags: [metrics]
+      summary: Prometheus metrics
+      security: []
+      responses:
+        '200':
+          description: Prometheus text exposition
+          content:
+            text/plain:
+              schema:
+                type: string
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Dev mode accepts Bearer `dev`
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+  parameters:
+    Offset:
+      name: offset
+      in: query
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 500
+        default: 50
+    EntityId:
+      name: entity_id
+      in: path
+      required: true
+      schema:
+        type: string
+    AsOf:
+      name: as_of
+      in: query
+      schema:
+        type: string
+        format: date-time
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      schema:
+        type: string
+
+  responses:
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    HealthResponse:
+      type: object
+      required: [status, version]
+      properties:
+        status:
+          type: string
+          example: ok
+        version:
+          type: string
+
+    ReadinessResponse:
+      type: object
+      required: [status, database, redis]
+      properties:
+        status:
+          type: string
+        database:
+          type: string
+        redis:
+          type: string
+
+    PageMeta:
+      type: object
+      required: [total, offset, limit]
+      properties:
+        total:
+          type: integer
+        offset:
+          type: integer
+        limit:
+          type: integer
+
+    ErrorResponse:
+      type: object
+      properties:
+        detail:
+          type: string
+
+    IngestEventRequest:
+      type: object
+      required: [raw]
+      properties:
+        raw:
+          type: object
+          additionalProperties: true
+        idempotency_key:
+          type: string
+          nullable: true
+
+    IngestBatchRequest:
+      type: object
+      required: [events]
+      properties:
+        events:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        idempotency_key:
+          type: string
+          nullable: true
+
+    EvidenceEventResponse:
+      type: object
+      required: [event_id, source_id, target_id, relation, channel, observed_at]
+      properties:
+        event_id:
+          type: string
+        source_id:
+          type: string
+        target_id:
+          type: string
+        relation:
+          type: string
+        channel:
+          type: string
+        observed_at:
+          type: string
+          format: date-time
+        source_type:
+          type: string
+          nullable: true
+        target_type:
+          type: string
+          nullable: true
+        payload_hash:
+          type: string
+          nullable: true
+
+    IngestResult:
+      type: object
+      required: [event, created, edge_updated]
+      properties:
+        event:
+          $ref: '#/components/schemas/EvidenceEventResponse'
+        created:
+          type: boolean
+        edge_updated:
+          type: boolean
+
+    IngestBatchResult:
+      type: object
+      required: [results, accepted, duplicates]
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/IngestResult'
+        accepted:
+          type: integer
+        duplicates:
+          type: integer
+
+    EntityResponse:
+      type: object
+      required: [entity_id, entity_type, name]
+      properties:
+        entity_id:
+          type: string
+        entity_type:
+          type: string
+        name:
+          type: string
+        criticality:
+          type: string
+          default: unknown
+        metadata:
+          type: object
+          additionalProperties: true
+        aliases:
+          type: array
+          items:
+            type: string
+        created_at:
+          type: string
+          format: date-time
+          nullable: true
+        updated_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    EntityCreateRequest:
+      type: object
+      required: [entity_id, entity_type, name]
+      properties:
+        entity_id:
+          type: string
+        entity_type:
+          type: string
+          enum: [agent, tool, service, data, queue, credential, model]
+        name:
+          type: string
+        criticality:
+          type: string
+        metadata:
+          type: object
+          additionalProperties: true
+
+    EntityListResponse:
+      type: object
+      required: [items, page]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/EntityResponse'
+        page:
+          $ref: '#/components/schemas/PageMeta'
+
+    GraphNode:
+      type: object
+      required: [entity_id, entity_type, name, criticality]
+      properties:
+        entity_id:
+          type: string
+        entity_type:
+          type: string
+        name:
+          type: string
+        criticality:
+          type: string
+
+    GraphEdge:
+      type: object
+      required: [edge_id, source_id, target_id, relation, layer, confidence]
+      properties:
+        edge_id:
+          type: string
+        source_id:
+          type: string
+        target_id:
+          type: string
+        relation:
+          type: string
+        layer:
+          type: string
+        confidence:
+          type: number
+        necessity:
+          type: string
+        evidence_count:
+          type: integer
+
+    GraphPayload:
+      type: object
+      required: [nodes, edges, layer, engine_version]
+      properties:
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/GraphNode'
+        edges:
+          type: array
+          items:
+            $ref: '#/components/schemas/GraphEdge'
+        layer:
+          type: string
+        as_of:
+          type: string
+          format: date-time
+          nullable: true
+        engine_version:
+          type: string
+
+    EdgeResponse:
+      type: object
+      additionalProperties: true
+
+    EdgeListResponse:
+      type: object
+      required: [items, page]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/EdgeResponse'
+        page:
+          $ref: '#/components/schemas/PageMeta'
+
+    EvidenceListResponse:
+      type: object
+      required: [items, page]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/EvidenceEventResponse'
+        page:
+          $ref: '#/components/schemas/PageMeta'
+
+    BlastRadiusRequest:
+      type: object
+      required: [source_id]
+      properties:
+        source_id:
+          type: string
+        as_of:
+          type: string
+          format: date-time
+          nullable: true
+        max_depth:
+          type: integer
+          nullable: true
+        max_nodes:
+          type: integer
+          nullable: true
+
+    ReachabilityRequest:
+      type: object
+      required: [source_id]
+      properties:
+        source_id:
+          type: string
+        as_of:
+          type: string
+          format: date-time
+          nullable: true
+        max_depth:
+          type: integer
+          nullable: true
+
+    RunbookAction:
+      type: object
+      required: [stage, description]
+      properties:
+        stage:
+          type: string
+        description:
+          type: string
+        entity_id:
+          type: string
+          nullable: true
+
+    DecisionRationale:
+      type: object
+      required: [summary]
+      properties:
+        summary:
+          type: string
+        details:
+          type: array
+          items:
+            type: string
+        reason_codes:
+          type: array
+          items:
+            type: string
+        blast_radius:
+          type: object
+          additionalProperties: true
+        coverage_breakdown:
+          type: object
+          additionalProperties: true
+        suggested_runbook:
+          type: array
+          items:
+            $ref: '#/components/schemas/RunbookAction'
+
+    DecisionReport:
+      type: object
+      required:
+        - decision_id
+        - entity_id
+        - verdict
+        - coverage
+        - rationale
+        - limitations_footer
+        - as_of
+        - engine_version
+      properties:
+        decision_id:
+          type: string
+        entity_id:
+          type: string
+        verdict:
+          type: string
+          enum: [UNSAFE, SAFE, INDETERMINATE]
+        coverage:
+          type: number
+        truncated:
+          type: boolean
+        reason_codes:
+          type: array
+          items:
+            type: string
+        rationale:
+          $ref: '#/components/schemas/DecisionRationale'
+        limitations_footer:
+          type: string
+        as_of:
+          type: string
+          format: date-time
+        engine_version:
+          type: string
+        change_type:
+          type: string
+          nullable: true
+        supersedes:
+          type: string
+          nullable: true
+        superseded_by:
+          type: string
+          nullable: true
+        created_by:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          nullable: true
+        paths:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+
+    DecisionEvaluateRequest:
+      type: object
+      required: [entity_id]
+      properties:
+        entity_id:
+          type: string
+        as_of:
+          type: string
+          format: date-time
+          nullable: true
+        change_type:
+          type: string
+          nullable: true
+
+    DecisionListResponse:
+      type: object
+      required: [items, page]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/DecisionReport'
+        page:
+          $ref: '#/components/schemas/PageMeta'
+
+    CoverageEstimate:
+      type: object
+      required: [coverage, observed_entities, total_entities, meets_threshold, c_min]
+      properties:
+        coverage:
+          type: number
+        observed_entities:
+          type: integer
+        total_entities:
+          type: integer
+        suppressed_channels:
+          type: array
+          items:
+            type: string
+        meets_threshold:
+          type: boolean
+        c_min:
+          type: number
+        as_of:
+          type: string
+          format: date-time
+          nullable: true
+
+    CoverageSnapshotResponse:
+      type: object
+      required: [snapshot_id, coverage, observed_entities, total_entities, captured_at]
+      properties:
+        snapshot_id:
+          type: string
+        coverage:
+          type: number
+        observed_entities:
+          type: integer
+        total_entities:
+          type: integer
+        suppressed_channels:
+          type: array
+          items:
+            type: string
+        scope:
+          type: string
+          nullable: true
+        captured_at:
+          type: string
+          format: date-time
+
+    SnapshotListResponse:
+      type: object
+      required: [items, page]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CoverageSnapshotResponse'
+        page:
+          $ref: '#/components/schemas/PageMeta'
+
+    CalibrationProfile:
+      type: object
+      properties:
+        theta_c:
+          type: number
+        theta_p:
+          type: number
+        c_min:
+          type: number
+        confirmed_requires_direct_evidence:
+          type: boolean
+        min_trace_observations_for_confirmed:
+          type: integer
+
+    BenchmarkRunCreate:
+      type: object
+      properties:
+        config:
+          type: object
+          additionalProperties: true
+
+    BenchmarkRunResponse:
+      type: object
+      required: [run_id, status]
+      properties:
+        run_id:
+          type: string
+        status:
+          type: string
+        config:
+          type: object
+          additionalProperties: true
+        started_at:
+          type: string
+          format: date-time
+          nullable: true
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    BenchmarkResultResponse:
+      type: object
+      required: [result_id, run_id, loss, method, metrics]
+      properties:
+        result_id:
+          type: string
+        run_id:
+          type: string
+        loss:
+          type: number
+        method:
+          type: string
+        metrics:
+          type: object
+          additionalProperties: true
+        data_class:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    BenchmarkResultsEnvelope:
+      type: object
+      required: [run, results]
+      properties:
+        run:
+          $ref: '#/components/schemas/BenchmarkRunResponse'
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/BenchmarkResultResponse'
+        data_class:
+          type: string
+
+    BenchmarkRunListResponse:
+      type: object
+      required: [items, page]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/BenchmarkRunResponse'
+        page:
+          $ref: '#/components/schemas/PageMeta'
+
+    AuditEntry:
+      type: object
+      properties:
+        audit_id:
+          type: string
+        principal_id:
+          type: string
+        action:
+          type: string
+        resource_type:
+          type: string
+        resource_id:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    AuditListResponse:
+      type: object
+      required: [items, page]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditEntry'
+        page:
+          $ref: '#/components/schemas/PageMeta'

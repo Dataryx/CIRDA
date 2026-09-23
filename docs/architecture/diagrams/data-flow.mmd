@@ -1,0 +1,38 @@
+flowchart TB
+  subgraph sources [Evidence Sources]
+    T[Traces]
+    D[DB Audit]
+    M[Messaging]
+    I[IAM]
+    A[Agent Framework]
+    S[Static Declarations]
+  end
+
+  subgraph ingest [Ingest Layer]
+    W[Ingest Worker]
+    N[Normalizer]
+    A1[Channel Adapters]
+  end
+
+  subgraph store [Persistence]
+    PG[(PostgreSQL)]
+    R[(Redis Bus)]
+  end
+
+  subgraph api [Control Plane]
+    API[CIRDA API]
+    CORE[cirda-core]
+  end
+
+  subgraph ui [Operator UI]
+    WEB[Web Dashboard]
+  end
+
+  sources --> W
+  W --> N
+  N --> A1
+  A1 --> API
+  API --> CORE
+  CORE --> PG
+  API --> R
+  WEB --> API

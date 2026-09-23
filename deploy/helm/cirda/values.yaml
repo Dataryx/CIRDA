@@ -1,0 +1,105 @@
+global:
+  imagePullPolicy: IfNotPresent
+  imageRegistry: ""
+
+api:
+  replicaCount: 2
+  image:
+    repository: cirda/api
+    tag: "0.1.0"
+  service:
+    type: ClusterIP
+    port: 8000
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+  pdb:
+    minAvailable: 1
+
+ingest:
+  replicaCount: 2
+  image:
+    repository: cirda/ingest-worker
+    tag: "0.1.0"
+  resources:
+    requests:
+      cpu: 200m
+      memory: 384Mi
+    limits:
+      cpu: "1"
+      memory: 768Mi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 8
+    targetCPUUtilizationPercentage: 75
+
+web:
+  replicaCount: 2
+  image:
+    repository: cirda/web
+    tag: "0.1.0"
+  service:
+    type: ClusterIP
+    port: 80
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: cirda.example.com
+      paths:
+        - path: /api
+          pathType: Prefix
+          service: api
+        - path: /
+          pathType: Prefix
+          service: web
+  tls:
+    - secretName: cirda-tls
+      hosts:
+        - cirda.example.com
+
+config:
+  appEnv: production
+  authMode: jwt
+  eventBus: redis
+  corsOrigins: "https://cirda.example.com"
+  otelEnabled: true
+  otelEndpoint: "http://otel-collector:4317"
+  schedulerEnabled: true
+  thetaC: "0.62"
+  thetaP: "0.28"
+  cMin: "0.85"
+
+secrets:
+  databaseUrl: "postgresql+asyncpg://cirda:CHANGE_ME@postgres:5432/cirda"
+  redisUrl: "redis://redis:6379/0"
+  jwtSecret: "CHANGE_ME"
+  kafkaBootstrapServers: "redpanda:9092"
+
+networkPolicy:
+  enabled: true
+
+serviceMonitor:
+  enabled: true
+  interval: 30s
+  scrapeTimeout: 10s
