@@ -17,9 +17,9 @@
   --border: 214 32% 91%;
   --input: 214 32% 91%;
   --ring: 222 47% 11%;
-  --verdict-unsafe: 347 83% 41%;
-  --verdict-safe: 161 94% 24%;
-  --verdict-indeterminate: 32 95% 32%;
+  --verdict-unsafe: 347 83% 35%;
+  --verdict-safe: 161 94% 20%;
+  --verdict-indeterminate: 32 95% 28%;
   --layer-confirmed: 262 83% 48%;
   --layer-possible: 258 70% 58%;
 }

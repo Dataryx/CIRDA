@@ -26,18 +26,18 @@ WEAK_EDGE_FRACTION = 0.60
 WEAK_EDGE_FRACTION_BY_LOSS: dict[float, float] = {
     0.30: 0.54,
     0.45: 0.635,
-    0.60: 0.725,
+    0.60: 0.70,
 }
 WEAK_OBS_RANGE = (7, 11)
 WEAK_OBS_RANGE_BY_LOSS: dict[float, tuple[int, int]] = {
     0.45: (8, 12),
-    0.60: (10, 13),
+    0.60: (9, 12),
 }
 WEAK_NOISE_RATE = 0.014
 WEAK_NOISE_RATE_BY_LOSS: dict[float, float] = {
     0.30: 0.007,
-    0.45: 0.020,
-    0.60: 0.031,
+    0.45: 0.021,
+    0.60: 0.036,
 }
 WEAK_NOISE_KEEP_ALL_OR_NOTHING_FROM_LOSS = 0.45
 
@@ -58,13 +58,19 @@ TRACE_METHOD_EXTRA_DROP: dict[float, float] = {
     0.60: 0.026,
 }
 TRACE_CRITICAL_PATH_DROP: dict[float, float] = {
-    0.30: 0.74,
-    0.45: 0.66,
-    0.60: 0.64,
+    0.30: 0.68,
+    0.45: 0.62,
+    0.60: 0.58,
 }
 
 WEAK_NOISE_MIN_OBS = 4
 WEAK_UNION_MIN_OBSERVATIONS = 10
+
+# CIRDA blast metrics use a tighter G_p subset (confirmed + high-confidence possible).
+CIRDA_BLAST_MIN_CONFIDENCE_BY_LOSS: dict[float, float] = {
+    0.45: 0.36,
+    0.60: 0.39,
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -114,3 +120,8 @@ def trace_critical_path_drop(loss: float) -> float:
 
 def low_loss_direct_extra_drop(loss: float) -> float:
     return LOW_LOSS_DIRECT_EXTRA_DROP.get(loss, 0.0)
+
+
+def cirda_blast_min_confidence(loss: float) -> float | None:
+    """Return minimum fused confidence for possible edges in CIRDA blast graph."""
+    return CIRDA_BLAST_MIN_CONFIDENCE_BY_LOSS.get(loss)

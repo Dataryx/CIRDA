@@ -90,6 +90,8 @@ class MemoryStore:
             if idempotency_key and idempotency_key in self.idempotency_index:
                 existing_id = self.idempotency_index[idempotency_key]
                 return self.evidence_events[existing_id], False
+            if event.event_id in self.evidence_events:
+                return self.evidence_events[event.event_id], False
             self.evidence_events[event.event_id] = event
             if idempotency_key:
                 self.idempotency_index[idempotency_key] = event.event_id

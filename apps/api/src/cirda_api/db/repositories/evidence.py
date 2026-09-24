@@ -26,6 +26,10 @@ class EvidenceRepository(RepositoryBase):
             return self.memory.add_evidence(event, idempotency_key)
 
         assert self.session is not None
+        by_id = await self.session.get(EvidenceModel, event.event_id)
+        if by_id is not None:
+            return self._to_domain(by_id), False
+
         if idempotency_key:
             existing = await self.session.execute(
                 select(EvidenceModel).where(EvidenceModel.idempotency_key == idempotency_key)

@@ -7,6 +7,7 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from cirda_api.db.json_safe import json_safe
 from cirda_api.db.models.decision import Decision as DecisionModel
 from cirda_api.db.models.decision import DecisionPath, RunbookExecution
 from cirda_api.db.repositories.base import RepositoryBase, utcnow
@@ -26,8 +27,8 @@ class DecisionRepository(RepositoryBase):
             verdict=record["verdict"],
             coverage=record["coverage"],
             truncated=record.get("truncated", False),
-            reason_codes=record.get("reason_codes", []),
-            rationale=record.get("rationale", {}),
+            reason_codes=json_safe(record.get("reason_codes", [])),
+            rationale=json_safe(record.get("rationale", {})),
             as_of=record["as_of"],
             engine_version=record["engine_version"],
             change_type=record.get("change_type"),

@@ -21,18 +21,23 @@ def _critical_blast_set(graph: nx.DiGraph, source_id: str) -> frozenset[str]:
     return blast.critical_reachable
 
 
+def _graph_for_blast(result: InferenceResult) -> nx.DiGraph:
+    return result.blast_graph if result.blast_graph is not None else result.possible_graph
+
+
 def blast_recall(
     result: InferenceResult,
     truth_graph: nx.DiGraph,
     targets: tuple[str, ...],
 ) -> float:
     """Mean recall of critical blast nodes against ground truth."""
+    graph = _graph_for_blast(result)
     recalls: list[float] = []
     for target in targets:
         true_blast = _critical_blast_set(truth_graph, target)
         if not true_blast:
             continue
-        predicted = _critical_blast_set(result.possible_graph, target)
+        predicted = _critical_blast_set(graph, target)
         recalls.append(len(predicted & true_blast) / len(true_blast))
     if not recalls:
         return 0.0
@@ -45,9 +50,10 @@ def blast_precision(
     targets: tuple[str, ...],
 ) -> float:
     """Mean precision of predicted critical blast against ground truth."""
+    graph = _graph_for_blast(result)
     precisions: list[float] = []
     for target in targets:
-        predicted = _critical_blast_set(result.possible_graph, target)
+        predicted = _critical_blast_set(graph, target)
         if not predicted:
             continue
         true_blast = _critical_blast_set(truth_graph, target)

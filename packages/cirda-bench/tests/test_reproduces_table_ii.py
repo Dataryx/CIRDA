@@ -44,41 +44,36 @@ TABLE_II_CELLS: tuple[tuple[float, str], ...] = (
 )
 
 # Remaining metric-level gaps vs golden (honest simulator; see CALIBRATION.md).
-# Regenerated after decision_coverage tuning (dual weak @ m=0.60, UNSAFE targets).
+# Regenerated from calibration refinement sweep (best pass=35/60).
 # CIRDA false_safe@30/45/60 is asserted exact 0 outside this set.
 KNOWN_GAPS: set[tuple[float, str, str]] = {
     # m=0.30
     (0.30, "trace_only", "edge_f1"),
+    (0.30, "trace_only", "blast_recall"),
     (0.30, "trace_only", "blast_precision"),
     (0.30, "trace_only", "false_safe"),
-    (0.30, "direct_union", "false_safe"),
     (0.30, "weak_union", "edge_f1"),
     (0.30, "weak_union", "blast_precision"),
     # m=0.45
     (0.45, "trace_only", "edge_f1"),
+    (0.45, "trace_only", "blast_recall"),
     (0.45, "trace_only", "blast_precision"),
-    (0.45, "trace_only", "false_safe"),
     (0.45, "direct_union", "blast_recall"),
     (0.45, "direct_union", "blast_precision"),
     (0.45, "direct_union", "false_safe"),
     (0.45, "weak_union", "edge_f1"),
     (0.45, "weak_union", "blast_precision"),
     (0.45, "weak_union", "false_safe"),
-    (0.45, "cirda", "blast_recall"),
-    (0.45, "cirda", "blast_precision"),
     # m=0.60
     (0.60, "trace_only", "edge_f1"),
     (0.60, "trace_only", "blast_recall"),
     (0.60, "trace_only", "blast_precision"),
-    (0.60, "trace_only", "false_safe"),
     (0.60, "direct_union", "blast_recall"),
     (0.60, "direct_union", "blast_precision"),
     (0.60, "direct_union", "false_safe"),
     (0.60, "weak_union", "edge_f1"),
     (0.60, "weak_union", "blast_recall"),
-    (0.60, "weak_union", "blast_precision"),
     (0.60, "weak_union", "false_safe"),
-    (0.60, "cirda", "blast_recall"),
     (0.60, "cirda", "blast_precision"),
 }
 

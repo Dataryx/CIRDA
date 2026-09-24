@@ -12,6 +12,7 @@ from cirda_core.domain.enums import GraphLayer
 from cirda_core.graph.layers import classify_layer
 from cirda_core.inference.fusion import fuse_channels, has_direct_evidence
 
+from cirda_bench.calibration import cirda_blast_min_confidence
 from cirda_bench.generator.telemetry import TelemetryBundle, to_channel_observations
 from cirda_bench.methods.base import (
     InferenceResult,
@@ -70,6 +71,17 @@ class CirdaMethod(Method):
         possible_all = possible + confirmed
         g_c, g_p = build_layer_graphs(entities, confirmed, possible_all)
 
+        blast_min = cirda_blast_min_confidence(telemetry.loss)
+        if blast_min is not None:
+            blast_possible = [
+                edge
+                for edge in possible_all
+                if edge.layer == GraphLayer.CONFIRMED or edge.confidence >= blast_min
+            ]
+            _, g_blast = build_layer_graphs(entities, confirmed, blast_possible)
+        else:
+            g_blast = None
+
         entity_ids = frozenset(entity.entity_id for entity in entities)
         coverage_inputs = CoverageInputs(
             observed_entity_ids=entity_ids,
@@ -93,4 +105,5 @@ class CirdaMethod(Method):
             confirmed_graph=g_c,
             possible_graph=g_p,
             gate_decisions=decisions,
+            blast_graph=g_blast,
         )

@@ -26,6 +26,7 @@ class InferenceResult:
     possible_graph: nx.DiGraph
     gate_decisions: dict[str, GateDecision] = field(default_factory=dict)
     edge_f1_edges: tuple[DependencyEdge, ...] = ()
+    blast_graph: nx.DiGraph | None = None
 
     def edges_for_f1(self) -> tuple[DependencyEdge, ...]:
         """Edges used for Table II edge-F1 (defaults to inferred_edges)."""
