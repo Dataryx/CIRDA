@@ -17,6 +17,9 @@ class CoverageEstimate(ApiModel):
     meets_threshold: bool
     c_min: float
     as_of: datetime | None = None
+    scope_entity_id: str | None = None
+    estimator: str = "production"
+    label: str = "estimate"
 
 
 class CoverageSnapshotResponse(ApiModel):

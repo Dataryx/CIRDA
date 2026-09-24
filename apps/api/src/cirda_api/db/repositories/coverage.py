@@ -65,37 +65,75 @@ class CoverageRepository(RepositoryBase):
 
         assert self.session is not None
         result = await self.session.execute(select(ChannelHealthModel))
-        return [
-            {
-                "channel": r.channel,
-                "health_score": r.health_score,
-                "lag_seconds": r.lag_seconds,
-                "last_checked_at": r.last_checked_at,
-                "details": r.details,
-            }
-            for r in result.scalars().all()
-        ]
+        rows: list[dict[str, Any]] = []
+        for r in result.scalars().all():
+            details: dict[str, Any] = {}
+            if r.details:
+                try:
+                    import json
 
-    async def upsert_channel_health(self, channel: str, health_score: float, lag_seconds: float = 0.0) -> None:
+                    parsed = json.loads(r.details)
+                    if isinstance(parsed, dict):
+                        details = parsed
+                except (json.JSONDecodeError, TypeError):
+                    details = {"note": r.details}
+            rows.append(
+                {
+                    "channel": r.channel,
+                    "health_score": r.health_score,
+                    "lag_seconds": r.lag_seconds,
+                    "last_checked_at": r.last_checked_at,
+                    "details": details,
+                    "suppression_suspected": bool(details.get("suppression_suspected")),
+                }
+            )
+        return rows
+
+    async def upsert_channel_health(
+        self,
+        channel: str,
+        health_score: float,
+        lag_seconds: float = 0.0,
+        *,
+        details: dict[str, Any] | None = None,
+        suppression_suspected: bool = False,
+    ) -> None:
+        import json
+
         now = utcnow()
+        detail_payload = {
+            **(details or {}),
+            "suppression_suspected": suppression_suspected,
+        }
+        payload = {
+            "channel": channel,
+            "health_score": health_score,
+            "lag_seconds": lag_seconds,
+            "last_checked_at": now,
+            "suppression_suspected": suppression_suspected,
+            "details": detail_payload,
+        }
         if self.memory:
-            self.memory.channel_health[channel] = {
-                "channel": channel,
-                "health_score": health_score,
-                "lag_seconds": lag_seconds,
-                "last_checked_at": now,
-            }
+            self.memory.channel_health[channel] = payload
             return
 
         assert self.session is not None
+        detail_str = json.dumps(detail_payload)
         row = await self.session.get(ChannelHealthModel, channel)
         if row:
             row.health_score = health_score
             row.lag_seconds = lag_seconds
             row.last_checked_at = now
+            row.details = detail_str
         else:
             self.session.add(
-                ChannelHealthModel(channel=channel, health_score=health_score, lag_seconds=lag_seconds, last_checked_at=now)
+                ChannelHealthModel(
+                    channel=channel,
+                    health_score=health_score,
+                    lag_seconds=lag_seconds,
+                    last_checked_at=now,
+                    details=detail_str,
+                )
             )
         await self.session.commit()
 

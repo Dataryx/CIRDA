@@ -1,5 +1,6 @@
 {
   "paths": [
+    "/api/v1/admin/channel-health",
     "/api/v1/admin/coverage",
     "/api/v1/admin/decay",
     "/api/v1/admin/jobs",

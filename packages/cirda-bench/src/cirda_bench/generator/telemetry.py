@@ -18,11 +18,13 @@ from cirda_bench.calibration import (
     UNIVERSAL_TRACE_RATE,
     VISIBILITY,
     WEAK_EDGE_FRACTION,
+    weak_edge_fraction,
     WEAK_NOISE_MIN_OBS,
     WEAK_NOISE_RATE,
     WEAK_OBS_RANGE,
     WEAK_UNION_MIN_OBSERVATIONS,
     channel_keep_probability,
+    low_loss_direct_extra_drop,
     telemetry_profile,
 )
 
@@ -76,6 +78,8 @@ def _primary_obs_range(channel: EvidenceChannel) -> tuple[int, int]:
 def generate_edge_telemetry(
     edges: list[DependencyEdge],
     rng: random.Random,
+    *,
+    loss: float = 0.0,
 ) -> list[EdgeTelemetry]:
     """Generate direct and weak telemetry for ground-truth edges.
 
@@ -107,7 +111,7 @@ def generate_edge_telemetry(
             lo, hi = UNIVERSAL_TRACE_OBS_RANGE
             observations[EvidenceChannel.TRACE] = rng.randint(lo, hi)
 
-        if rng.random() < WEAK_EDGE_FRACTION:
+        if rng.random() < weak_edge_fraction(loss):
             lo, hi = WEAK_OBS_RANGE
             if rng.random() < 0.55:
                 observations[EvidenceChannel.TEMPORAL_CORRELATION] = rng.randint(lo, hi)
@@ -155,10 +159,10 @@ def inject_weak_noise(
                     relation=Relation.CALLS,
                     observations={
                         EvidenceChannel.TEMPORAL_CORRELATION: rng.randint(
-                            WEAK_NOISE_MIN_OBS, WEAK_NOISE_MIN_OBS + 2
+                            WEAK_NOISE_MIN_OBS, WEAK_NOISE_MIN_OBS + 3
                         ),
                         EvidenceChannel.SHARED_RESOURCE: rng.randint(
-                            WEAK_NOISE_MIN_OBS, WEAK_NOISE_MIN_OBS + 1
+                            WEAK_NOISE_MIN_OBS, WEAK_NOISE_MIN_OBS + 2
                         ),
                     },
                     is_spurious=True,
@@ -207,12 +211,18 @@ def apply_loss(
             for r in records
         ]
 
+    extra_direct_drop = low_loss_direct_extra_drop(loss)
     dropped: list[EdgeTelemetry] = []
     for record in records:
         kept: dict[EvidenceChannel, int] = {}
         for channel, count in record.observations.items():
             keep_p = channel_keep_probability(channel, loss)
             if channel in _DIRECT_CHANNELS:
+                if rng.random() < keep_p:
+                    if extra_direct_drop > 0.0 and rng.random() < extra_direct_drop:
+                        continue
+                    kept[channel] = count
+            elif not record.is_spurious:
                 if rng.random() < keep_p:
                     kept[channel] = count
             else:
@@ -252,7 +262,7 @@ def build_telemetry_bundle(
 ) -> TelemetryBundle:
     """Generate full telemetry bundle at a given loss level."""
     profile = telemetry_profile(loss)
-    base = generate_edge_telemetry(edges, rng)
+    base = generate_edge_telemetry(edges, rng, loss=loss)
     with_noise = inject_weak_noise(base, all_node_ids, rng, noise_rate=profile.weak_noise_rate)
     after_loss = apply_loss(with_noise, loss, rng)
     return TelemetryBundle(edge_telemetry=tuple(after_loss), loss=loss)

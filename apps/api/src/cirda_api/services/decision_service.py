@@ -47,7 +47,10 @@ class DecisionService:
         policy = build_policy(self.settings)
         g_c = await self.graph_service.build_digraph(GraphLayer.CONFIRMED, as_of=as_of)
         g_p = await self.graph_service.build_digraph(GraphLayer.POSSIBLE, as_of=as_of)
-        coverage_est = await self.coverage_service.estimate(as_of=as_of)
+        coverage_est = await self.coverage_service.estimate(
+            as_of=as_of,
+            scope_entity_id=entity_id,
+        )
         gate = evaluate_gate_from_layers(
             confirmed_graph=g_c,
             possible_graph=g_p,

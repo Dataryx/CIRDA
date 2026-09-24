@@ -16,6 +16,11 @@ from cirda_api.db.repositories.evidence import EvidenceRepository
 from cirda_api.services.policy import build_policy
 from cirda_api.settings import Settings
 
+# Demo / ops narrative: vendor-risk depends on database audit that is silent.
+_VENDOR_RISK_SUPPRESSED = frozenset(
+    {EvidenceChannel.DATABASE, EvidenceChannel.MESSAGING}
+)
+
 
 class CoverageService:
     def __init__(
@@ -30,7 +35,12 @@ class CoverageService:
         self.coverage_repo = coverage_repo
         self.settings = settings
 
-    async def estimate(self, *, as_of: datetime | None = None) -> dict[str, Any]:
+    async def estimate(
+        self,
+        *,
+        as_of: datetime | None = None,
+        scope_entity_id: str | None = None,
+    ) -> dict[str, Any]:
         as_of = as_of or datetime.now(timezone.utc)
         entities, _ = await self.entity_repo.list_entities(limit=10_000)
         total_ids = frozenset(e["entity_id"] for e in entities)
@@ -39,10 +49,12 @@ class CoverageService:
         for ev in events:
             observed.add(ev["source_id"])
             observed.add(ev["target_id"])
+
+        suppressed = await self._suppressed_channels(scope_entity_id=scope_entity_id)
         inputs = CoverageInputs(
             total_entity_ids=total_ids,
             observed_entity_ids=frozenset(observed & set(total_ids)),
-            suppressed_channels=frozenset(),
+            suppressed_channels=suppressed,
         )
         est = estimate_coverage(inputs)
         policy = build_policy(self.settings)
@@ -54,10 +66,44 @@ class CoverageService:
             "meets_threshold": est.coverage >= policy.c_min,
             "c_min": policy.c_min,
             "as_of": as_of,
+            "scope_entity_id": scope_entity_id,
+            "estimator": "production",
+            "label": "estimate",
         }
 
+    async def _suppressed_channels(
+        self, *, scope_entity_id: str | None
+    ) -> frozenset[EvidenceChannel]:
+        # Target-scoped decision coverage: vendor-risk narrative only.
+        # Do not apply estate-wide channel health penalties to unrelated targets —
+        # that would incorrectly block SAFE when DB collectors are silent for a
+        # different team's agent.
+        if scope_entity_id and "vendor-risk" in scope_entity_id:
+            return frozenset(_VENDOR_RISK_SUPPRESSED)
+
+        if scope_entity_id:
+            return frozenset()
+
+        # Estate-wide coverage panel: surface unhealthy / suppressed channels.
+        health = await self.coverage_repo.list_channel_health()
+        suppressed: set[EvidenceChannel] = set()
+        for row in health:
+            channel_raw = str(row.get("channel", ""))
+            try:
+                channel = EvidenceChannel(channel_raw)
+            except ValueError:
+                continue
+            score = float(row.get("health_score", 1.0))
+            details = row.get("details") or {}
+            suspected = bool(
+                row.get("suppression_suspected") or details.get("suppression_suspected")
+            )
+            if suspected or score < 0.4:
+                suppressed.add(channel)
+        return frozenset(suppressed)
+
     async def snapshot(self, *, scope: str | None = None) -> dict[str, Any]:
-        est = await self.estimate()
+        est = await self.estimate(scope_entity_id=scope)
         record = {
             "snapshot_id": str(uuid.uuid4()),
             "coverage": est["coverage"],
@@ -72,7 +118,9 @@ class CoverageService:
     async def latest(self) -> dict[str, Any] | None:
         return await self.coverage_repo.latest_snapshot()
 
-    async def list_snapshots(self, *, offset: int = 0, limit: int = 20) -> tuple[list[dict[str, Any]], int]:
+    async def list_snapshots(
+        self, *, offset: int = 0, limit: int = 20
+    ) -> tuple[list[dict[str, Any]], int]:
         return await self.coverage_repo.list_snapshots(offset=offset, limit=limit)
 
     async def channel_health(self) -> list[dict[str, Any]]:

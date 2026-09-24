@@ -53,8 +53,8 @@ dev-lite: ## Start API + web with in-memory store (no Postgres/Redis)
 	CIRDA_MEMORY_STORE=true CIRDA_EVENT_BUS=inmemory CIRDA_SCHEDULER_ENABLED=false \
 		$(MAKE) dev
 
-dev-lite.ps1:
-	$$env:CIRDA_MEMORY_STORE='true'; $$env:CIRDA_EVENT_BUS='inmemory'; $$env:CIRDA_SCHEDULER_ENABLED='false'; $(MAKE) dev
+dev-lite.ps1: ## Windows PowerShell dev-lite (memory store + seed)
+	powershell -ExecutionPolicy Bypass -File scripts/dev-lite.ps1
 
 seed: ## Seed demo estate (requires CIRDA_ENV=local, API running or direct mode)
 	$(PYTHON) scripts/seed_demo_estate.py

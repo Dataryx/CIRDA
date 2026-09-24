@@ -21,9 +21,24 @@ SECONDARY_DIRECT_OBS_RANGE = (3, 5)
 UNIVERSAL_TRACE_RATE = 0.85
 UNIVERSAL_TRACE_OBS_RANGE = (3, 5)
 
-WEAK_EDGE_FRACTION = 0.55
-WEAK_OBS_RANGE = (6, 10)
-WEAK_NOISE_RATE = 0.008
+WEAK_EDGE_FRACTION = 0.60
+WEAK_EDGE_FRACTION_BY_LOSS: dict[float, float] = {
+    0.30: 0.54,
+    0.45: 0.62,
+    0.60: 0.67,
+}
+WEAK_OBS_RANGE = (7, 11)
+WEAK_NOISE_RATE = 0.014
+WEAK_NOISE_RATE_BY_LOSS: dict[float, float] = {
+    0.30: 0.009,
+    0.45: 0.017,
+    0.60: 0.030,
+}
+
+LOW_LOSS_DIRECT_EXTRA_DROP: dict[float, float] = {
+    0.30: 0.085,
+    0.45: 0.05,
+}
 
 TRACE_PHANTOM_RATE_BY_LOSS: dict[float, float] = {
     0.30: 0.12,
@@ -32,18 +47,18 @@ TRACE_PHANTOM_RATE_BY_LOSS: dict[float, float] = {
 }
 TRACE_MIN_OBSERVATIONS = 1
 TRACE_METHOD_EXTRA_DROP: dict[float, float] = {
-    0.30: 0.05,
-    0.45: 0.045,
-    0.60: 0.04,
+    0.30: 0.014,
+    0.45: 0.012,
+    0.60: 0.030,
 }
 TRACE_CRITICAL_PATH_DROP: dict[float, float] = {
-    0.30: 0.82,
-    0.45: 0.78,
-    0.60: 0.72,
+    0.30: 0.69,
+    0.45: 0.62,
+    0.60: 0.63,
 }
 
-WEAK_NOISE_MIN_OBS = 3
-WEAK_UNION_MIN_OBSERVATIONS = 8
+WEAK_NOISE_MIN_OBS = 4
+WEAK_UNION_MIN_OBSERVATIONS = 10
 
 
 @dataclass(frozen=True, slots=True)
@@ -52,10 +67,18 @@ class TelemetryProfile:
     weak_noise_rate: float
 
 
+def weak_edge_fraction(loss: float) -> float:
+    return WEAK_EDGE_FRACTION_BY_LOSS.get(loss, WEAK_EDGE_FRACTION)
+
+
+def weak_noise_rate_for_loss(loss: float) -> float:
+    return WEAK_NOISE_RATE_BY_LOSS.get(loss, WEAK_NOISE_RATE)
+
+
 def telemetry_profile(loss: float) -> TelemetryProfile:
     return TelemetryProfile(
         loss=loss,
-        weak_noise_rate=WEAK_NOISE_RATE * (1.0 + loss * 0.12),
+        weak_noise_rate=weak_noise_rate_for_loss(loss),
     )
 
 
@@ -77,3 +100,7 @@ def trace_phantom_rate(loss: float) -> float:
 
 def trace_critical_path_drop(loss: float) -> float:
     return TRACE_CRITICAL_PATH_DROP.get(loss, 0.0)
+
+
+def low_loss_direct_extra_drop(loss: float) -> float:
+    return LOW_LOSS_DIRECT_EXTRA_DROP.get(loss, 0.0)

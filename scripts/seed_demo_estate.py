@@ -30,6 +30,14 @@ SEED_MARKER = "cirda-demo-estate-v1"
 API_BASE = os.environ.get("CIRDA_API_URL", "http://localhost:8000")
 AUTH_HEADERS = {"Authorization": "Bearer dev", "X-CIRDA-Role": "admin"}
 
+DEMO_AGENT_IDS = (
+    "invoice-reconciler-agent",
+    "legacy-csv-export-agent",
+    "vendor-risk-agent",
+)
+
+HEALTH_PATHS = ("/healthz", "/api/v1/health", "/health")
+
 
 def _guard_local() -> None:
     env = os.environ.get("CIRDA_ENV", "").lower()
@@ -231,33 +239,48 @@ class HttpSeeder:
     def __init__(self, base_url: str) -> None:
         self.client = httpx.Client(base_url=base_url, headers=AUTH_HEADERS, timeout=30.0)
 
-    def health(self) -> bool:
-        try:
-            r = self.client.get("/api/v1/health")
-            return r.status_code == 200
-        except httpx.HTTPError:
-            return False
+    def health(self) -> tuple[bool, str | None]:
+        for path in HEALTH_PATHS:
+            try:
+                response = self.client.get(path)
+                if response.status_code >= 500:
+                    return False, f"{path} returned {response.status_code}"
+                if response.status_code == 200:
+                    return True, path
+            except httpx.HTTPError:
+                continue
+        return False, None
+
+    def list_entity_ids(self) -> set[str]:
+        response = self.client.get("/api/v1/entities", params={"limit": 100})
+        if response.status_code != 200:
+            return set()
+        payload = response.json()
+        return {item["entity_id"] for item in payload.get("items", [])}
+
+    def demo_estate_present(self) -> bool:
+        return all(agent_id in self.list_entity_ids() for agent_id in DEMO_AGENT_IDS)
 
     def upsert_entity(self, entity: dict[str, Any]) -> None:
-        r = self.client.post("/api/v1/entities", json=entity)
-        if r.status_code not in (200, 201):
-            print(f"  WARN entity {entity['entity_id']}: {r.status_code} {r.text[:120]}")
+        response = self.client.post("/api/v1/entities", json=entity)
+        if response.status_code not in (200, 201):
+            print(f"  WARN entity {entity['entity_id']}: {response.status_code} {response.text[:120]}")
 
     def ingest_event(self, raw: dict[str, Any]) -> bool:
-        r = self.client.post("/api/v1/ingest/events", json={"raw": raw})
-        if r.status_code != 200:
-            print(f"  WARN event {raw.get('event_id')}: {r.status_code}")
+        response = self.client.post("/api/v1/ingest/events", json={"raw": raw})
+        if response.status_code != 200:
+            print(f"  WARN event {raw.get('event_id')}: {response.status_code}")
             return False
-        return r.json().get("created", False)
+        return response.json().get("created", False)
+
+    def upsert_channel_health(self, payload: dict[str, Any]) -> None:
+        response = self.client.post("/api/v1/admin/channel-health", json=payload)
+        if response.status_code not in (200, 201):
+            print(f"  WARN channel-health {payload.get('channel')}: {response.status_code}")
 
 
-def seed_via_http(base_url: str) -> None:
-    seeder = HttpSeeder(base_url)
-    if not seeder.health():
-        print(f"ERROR: API not reachable at {base_url}. Start with: make dev")
-        sys.exit(1)
-
-    print(f"==> Seeding entities via {base_url}")
+def seed_entities_and_events(seeder: HttpSeeder) -> None:
+    print("==> Seeding entities")
     for entity in _entities():
         seeder.upsert_entity(entity)
         print(f"  entity: {entity['entity_id']}")
@@ -268,15 +291,65 @@ def seed_via_http(base_url: str) -> None:
         if seeder.ingest_event(raw):
             created += 1
     print(f"==> Done. {created} new events ingested (duplicates skipped).")
+
+    print("==> Seeding channel health (database/messaging suppression narrative)")
+    seeder.upsert_channel_health(
+        {
+            "channel": "database",
+            "health_score": 0.22,
+            "lag_seconds": 14400,
+            "suppression_suspected": True,
+            "details": {
+                "reporting_sources": 1,
+                "expected_sources": 9,
+                "notes": "6 of 9 expected audit sources silent for 4h",
+            },
+        }
+    )
+    seeder.upsert_channel_health(
+        {
+            "channel": "messaging",
+            "health_score": 0.35,
+            "lag_seconds": 3600,
+            "suppression_suspected": True,
+            "details": {"reporting_sources": 2, "expected_sources": 5},
+        }
+    )
+    seeder.upsert_channel_health(
+        {
+            "channel": "trace",
+            "health_score": 0.96,
+            "lag_seconds": 12,
+            "suppression_suspected": False,
+            "details": {},
+        }
+    )
     print("Evaluate decisions in the UI or via POST /api/v1/decisions/evaluate")
 
 
-def seed_via_direct() -> None:
+def seed_via_http(base_url: str, *, force_events: bool, skip_if_seeded: bool) -> None:
+    seeder = HttpSeeder(base_url)
+    ok, path = seeder.health()
+    if not ok:
+        print(f"ERROR: API not reachable at {base_url}. Start with: scripts/dev-lite.ps1 or make dev-lite")
+        sys.exit(1)
+    print(f"==> API healthy via {path}")
+
+    if skip_if_seeded and seeder.demo_estate_present() and not force_events:
+        print("==> Demo estate already seeded (all verdict-path agents present). Skipping.")
+        print("    Use --force to re-ingest events anyway.")
+        return
+
+    seed_entities_and_events(seeder)
+
+
+def seed_via_direct(*, force_events: bool) -> None:
     """Direct in-process seed using memory store (no running API)."""
-    os.environ.setdefault("CIRDA_MEMORY_STORE", "true")
-    os.environ.setdefault("CIRDA_EVENT_BUS", "inmemory")
-    os.environ.setdefault("CIRDA_AUTH_MODE", "dev")
-    os.environ.setdefault("CIRDA_SCHEDULER_ENABLED", "false")
+    os.environ["CIRDA_MEMORY_STORE"] = "true"
+    os.environ["CIRDA_EVENT_BUS"] = "inmemory"
+    os.environ["CIRDA_AUTH_MODE"] = "dev"
+    os.environ["CIRDA_SCHEDULER_ENABLED"] = "false"
+    os.environ.setdefault("CIRDA_ENV", "local")
 
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     sys.path.insert(0, os.path.join(root, "packages", "cirda-core", "src"))
@@ -285,15 +358,13 @@ def seed_via_direct() -> None:
     import asyncio
 
     from cirda_api.container import build_container
-    from cirda_api.db.session import create_all_tables, init_db
-    from cirda_api.settings import Settings
+    from cirda_api.settings import Settings, get_settings
+
+    get_settings.cache_clear()
+    cfg = Settings()
 
     async def _run() -> None:
-        cfg = Settings()
-        init_db(cfg)
-        await create_all_tables()
         container = build_container(cfg)
-
         for entity in _entities():
             await container.entity_service.upsert_entity(
                 entity_id=entity["entity_id"],
@@ -309,15 +380,83 @@ def seed_via_direct() -> None:
             result = await container.ingest_service.ingest_raw(raw)
             if result["created"]:
                 created += 1
-        print(f"==> Direct seed complete. {created} new events.")
 
+        # Channel health: database/messaging silent → vendor-risk coverage gap at `now`.
+        await container.coverage_service.coverage_repo.upsert_channel_health(
+            "database",
+            health_score=0.22,
+            lag_seconds=14_400,
+            suppression_suspected=True,
+            details={
+                "reporting_sources": 1,
+                "expected_sources": 9,
+                "notes": "6 of 9 expected audit sources silent for 4h",
+            },
+        )
+        await container.coverage_service.coverage_repo.upsert_channel_health(
+            "messaging",
+            health_score=0.35,
+            lag_seconds=3_600,
+            suppression_suspected=True,
+            details={"reporting_sources": 2, "expected_sources": 5},
+        )
+        await container.coverage_service.coverage_repo.upsert_channel_health(
+            "trace",
+            health_score=0.96,
+            lag_seconds=12,
+            suppression_suspected=False,
+        )
+        print(f"==> Direct seed complete. {created} new events.")
+        print("==> Channel health: database+messaging suppression for vendor-risk narrative.")
+
+    print("==> Seeding entities")
     asyncio.run(_run())
+    if force_events:
+        print("==> --force has no extra effect in direct mode (events are always upserted by event_id).")
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Seed CIRDA demo estate")
-    parser.add_argument("--direct", action="store_true", help="Seed in-process without HTTP API")
-    parser.add_argument("--api-url", default=API_BASE, help="API base URL")
+    parser = argparse.ArgumentParser(
+        description="Seed CIRDA demo estate for local retirement workflow demos.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  CIRDA_ENV=local uv run python scripts/seed_demo_estate.py
+      Seed via HTTP against http://localhost:8000 (API must be running).
+
+  CIRDA_ENV=local uv run python scripts/seed_demo_estate.py --direct
+      Seed in-process with CIRDA_MEMORY_STORE (no API server required).
+
+  uv run python scripts/seed_demo_estate.py --api-url http://127.0.0.1:8000 --force
+      Re-upsert entities and attempt all event ingests even if agents exist.
+
+Verdict-path agents created:
+  invoice-reconciler-agent  -> UNSAFE (evaluate at as_of=now)
+  legacy-csv-export-agent   -> SAFE (evaluate at as_of=now)
+  vendor-risk-agent         -> INDETERMINATE (target-scoped silent DB/messaging
+                              channels drop coverage below C_min=0.85 at `now`)
+        """,
+    )
+    parser.add_argument(
+        "--direct",
+        action="store_true",
+        help="Seed in-process with memory store (sets CIRDA_MEMORY_STORE=true; no HTTP API required).",
+    )
+    parser.add_argument(
+        "--api-url",
+        default=API_BASE,
+        help=f"API base URL for HTTP mode (default: {API_BASE}, env CIRDA_API_URL).",
+    )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Always upsert entities and ingest events (HTTP mode skips early exit when demo agents exist).",
+    )
+    parser.add_argument(
+        "--no-skip-if-seeded",
+        action="store_true",
+        help="Do not skip HTTP seed when all demo agents are already present.",
+    )
     args = parser.parse_args()
 
     _guard_local()
@@ -325,10 +464,14 @@ def main() -> None:
 
     if args.direct:
         print("==> Mode: direct (in-process memory store)")
-        seed_via_direct()
+        seed_via_direct(force_events=args.force)
     else:
-        print(f"==> Mode: HTTP ({args.api_url})")
-        seed_via_http(args.api_url.rstrip("/"))
+        print(f"==> Mode: HTTP ({args.api_url.rstrip('/')})")
+        seed_via_http(
+            args.api_url.rstrip("/"),
+            force_events=args.force,
+            skip_if_seeded=not args.no_skip_if_seeded,
+        )
 
 
 if __name__ == "__main__":

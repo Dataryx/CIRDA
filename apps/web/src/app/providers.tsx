@@ -10,6 +10,7 @@ import { useAuthInit } from '@/hooks/use-auth';
 import { useThemeEffect } from '@/hooks/use-theme';
 import { LoadingSpinner } from '@/components/feedback/loading-spinner';
 import { useAuthStore } from '@/stores/auth-store';
+import { setAuthGetters } from '@/api/client';
 
 const queryClient = createQueryClient();
 
@@ -24,6 +25,11 @@ export function Providers() {
 
   useEffect(() => {
     void loadRuntimeConfig().then((config) => {
+      // Wire auth getters BEFORE any child queries fire (avoids 401 race).
+      setAuthGetters(
+        () => useAuthStore.getState().session?.token ?? null,
+        () => useAuthStore.getState().session?.role ?? null,
+      );
       if (config.authMode === 'dev' && !useAuthStore.getState().session) {
         useAuthStore.getState().login('viewer');
       }
