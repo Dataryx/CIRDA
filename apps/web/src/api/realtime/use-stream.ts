@@ -1,6 +1,15 @@
 import { useEffect, useRef } from 'react';
 import { getWsUrl } from '@/app/config';
 
+function resolveWebSocketUrl(pathOrUrl: string): string {
+  if (pathOrUrl.startsWith('ws://') || pathOrUrl.startsWith('wss://')) {
+    return pathOrUrl;
+  }
+  const normalized = pathOrUrl.startsWith('/') ? pathOrUrl : `/${pathOrUrl}`;
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  return `${protocol}//${window.location.host}${normalized}`;
+}
+
 export type StreamTopic = 'evidence' | 'graph' | 'decision' | 'coverage' | 'benchmark' | 'audit';
 
 export interface StreamMessage {
@@ -22,7 +31,7 @@ export function useStream({ topics, enabled = true, onMessage }: UseStreamOption
   useEffect(() => {
     if (!enabled || topics.length === 0) return;
 
-    const wsUrl = `${getWsUrl()}?subscribe=${topics.join(',')}`;
+    const wsUrl = `${resolveWebSocketUrl(getWsUrl())}?subscribe=${topics.join(',')}`;
     const socket = new WebSocket(wsUrl);
 
     socket.onmessage = (event: MessageEvent<string>) => {

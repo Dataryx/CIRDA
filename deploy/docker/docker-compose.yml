@@ -11,7 +11,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U cirda"]
+      test: ["CMD-SHELL", "pg_isready -U cirda -d cirda"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -63,6 +63,8 @@ services:
       dockerfile: apps/api/Dockerfile
     environment:
       CIRDA_APP_ENV: development
+      CIRDA_ENV: local
+      CIRDA_MEMORY_STORE: "false"
       CIRDA_DATABASE_URL: postgresql+asyncpg://cirda:cirda@postgres:5432/cirda
       CIRDA_REDIS_URL: redis://redis:6379/0
       CIRDA_EVENT_BUS: redis
@@ -78,10 +80,15 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health')\""]
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health')\"",
+        ]
       interval: 10s
       timeout: 5s
-      retries: 10
+      start_period: 30s
+      retries: 12
 
   ingest-worker:
     build:
@@ -89,6 +96,8 @@ services:
       dockerfile: apps/ingest-worker/Dockerfile
     environment:
       CIRDA_APP_ENV: development
+      CIRDA_ENV: local
+      CIRDA_MEMORY_STORE: "false"
       CIRDA_EVENT_BUS: kafka
       CIRDA_KAFKA_BOOTSTRAP_SERVERS: redpanda:9092
       CIRDA_DATABASE_URL: postgresql+asyncpg://cirda:cirda@postgres:5432/cirda
@@ -104,6 +113,16 @@ services:
         condition: service_healthy
       api:
         condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8081/health')\"",
+        ]
+      interval: 15s
+      timeout: 5s
+      start_period: 20s
+      retries: 10
 
   web:
     build:
@@ -114,6 +133,11 @@ services:
     depends_on:
       api:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/ >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
 volumes:
   pgdata:

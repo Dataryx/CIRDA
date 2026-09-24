@@ -11,13 +11,13 @@ export default {
       },
       colors: {
         brand: {
-          DEFAULT: '#4f46e5',
+          DEFAULT: '#4338ca',
           foreground: '#ffffff',
         },
         verdict: {
-          unsafe: '#e11d48',
-          safe: '#059669',
-          indeterminate: '#d97706',
+          unsafe: '#be123c',
+          safe: '#047857',
+          indeterminate: '#b45309',
         },
         layer: {
           confirmed: '#7c3aed',

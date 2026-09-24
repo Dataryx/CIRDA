@@ -37,14 +37,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         init_db(cfg)
         if cfg.use_memory_store or cfg.effective_database_url.startswith("sqlite"):
             await create_all_tables()
-        container = build_container(cfg)
-        set_app_container(container)
-        app.state.container = container
+        container = None
+        if cfg.use_memory_store:
+            container = build_container(cfg)
+            set_app_container(container)
+            app.state.container = container
         scheduler = create_scheduler(cfg, container)
-        if cfg.scheduler_enabled:
+        if cfg.scheduler_enabled and container is not None:
             scheduler.start()
         yield
-        if cfg.scheduler_enabled:
+        if cfg.scheduler_enabled and container is not None:
             scheduler.shutdown(wait=False)
         await dispose_db()
 

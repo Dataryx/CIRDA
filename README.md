@@ -29,9 +29,20 @@ Open [http://localhost:5173](http://localhost:5173) and explore the demo agents.
 
 ```bash
 make dev-lite
+# Windows:
+powershell -ExecutionPolicy Bypass -File scripts/dev-lite.ps1
 ```
 
-Uses in-memory SQLite and an in-memory event bus — ideal for first-time exploration.
+Uses in-memory store and an in-memory event bus — ideal for first-time exploration.
+
+### Docker Compose (Postgres)
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/compose-up.ps1
+# Web http://localhost:3000  API http://localhost:8000
+```
+
+Lite profile: Postgres + Redis + API + Web. Use `-Profile full` for Redpanda/ingest.
 
 ## Repository Layout
 

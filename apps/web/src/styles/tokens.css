@@ -17,11 +17,11 @@
   --border: 214 32% 91%;
   --input: 214 32% 91%;
   --ring: 222 47% 11%;
-  --verdict-unsafe: 347 77% 50%;
-  --verdict-safe: 160 84% 30%;
-  --verdict-indeterminate: 32 95% 44%;
-  --layer-confirmed: 262 83% 58%;
-  --layer-possible: 258 90% 76%;
+  --verdict-unsafe: 347 83% 41%;
+  --verdict-safe: 161 94% 24%;
+  --verdict-indeterminate: 32 95% 32%;
+  --layer-confirmed: 262 83% 48%;
+  --layer-possible: 258 70% 58%;
 }
 
 .dark {

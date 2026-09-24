@@ -37,12 +37,15 @@ async def get_container(
 
 
 async def get_request_container(
+    request: Request,
     session: Annotated[AsyncSession, Depends(get_session)],
     settings: Annotated[Settings, Depends(get_settings)],
 ) -> Container:
     if settings.use_memory_store:
+        if hasattr(request.app.state, "container"):
+            return request.app.state.container
         return get_app_container()
     return build_container(settings, session=session)
 
 
-ContainerDep = Annotated[Container, Depends(get_container)]
+ContainerDep = Annotated[Container, Depends(get_request_container)]

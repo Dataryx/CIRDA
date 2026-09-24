@@ -58,8 +58,10 @@ export function AppSidebar() {
             end={end}
             className={({ isActive }) =>
               cn(
-                'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                isActive ? 'bg-white/20 text-white' : 'text-white/80 hover:bg-white/10 hover:text-white',
+                'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-semibold transition-colors',
+                isActive
+                  ? 'bg-black/35 text-white'
+                  : 'font-medium text-white/90 hover:bg-black/20 hover:text-white',
               )
             }
           >

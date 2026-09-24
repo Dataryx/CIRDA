@@ -1,0 +1,5 @@
+{
+  "apiBaseUrl": "",
+  "wsUrl": "/api/v1/stream",
+  "authMode": "dev"
+}

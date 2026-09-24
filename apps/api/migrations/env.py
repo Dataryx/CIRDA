@@ -23,7 +23,10 @@ settings = get_settings()
 db_url = settings.database_url or "sqlite+aiosqlite:///./cirda.db"
 if db_url.startswith("postgresql://"):
     db_url = db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
-config.set_main_option("sqlalchemy.url", db_url)
+elif db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql+asyncpg://", 1)
+# Alembic configparser treats `%` as interpolation; escape for DSN passwords.
+config.set_main_option("sqlalchemy.url", db_url.replace("%", "%%"))
 
 
 def run_migrations_offline() -> None:

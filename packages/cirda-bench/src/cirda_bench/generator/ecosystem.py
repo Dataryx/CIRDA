@@ -5,8 +5,11 @@ from __future__ import annotations
 import random
 from dataclasses import dataclass
 
+from cirda_core.config.policy import PolicyConfig
 from cirda_core.domain.entity import Entity
 from cirda_core.domain.enums import EntityType
+from cirda_core.graph.kernel import build_digraph
+from cirda_core.graph.reachability import critical_descendants
 
 from cirda_bench.generator.criticality import sample_criticality
 from cirda_bench.generator.telemetry import TelemetryBundle, build_telemetry_bundle
@@ -102,6 +105,51 @@ def generate_ecosystem(
     )
 
 
+def _out_degree_by_source(edges: list) -> dict[str, int]:
+    out_degree: dict[str, int] = {}
+    for edge in edges:
+        out_degree[edge.source_id] = out_degree.get(edge.source_id, 0) + 1
+    return out_degree
+
+
+def _ground_truth_unsafe_sources(entities: list[Entity], edges: list) -> set[str]:
+    """Entities with at least one critical descendant in the ground-truth graph."""
+    graph = build_digraph(list(entities), list(edges))
+    policy = PolicyConfig()
+    unsafe: set[str] = set()
+    for entity in entities:
+        reach = critical_descendants(
+            graph,
+            entity.entity_id,
+            criticality_threshold=policy.critical_threshold,
+        )
+        if reach.reachable:
+            unsafe.add(entity.entity_id)
+    return unsafe
+
+
+def _rank_by_outgoing(
+    entity_ids: list[str],
+    out_degree: dict[str, int],
+    rng: random.Random,
+    *,
+    unsafe_sources: set[str] | None = None,
+) -> list[str]:
+    """Prefer ground-truth UNSAFE agents with higher out-degree."""
+    unsafe_sources = unsafe_sources or set()
+    by_tier: dict[tuple[int, int], list[str]] = {}
+    for entity_id in entity_ids:
+        tier = (1 if entity_id in unsafe_sources else 0, out_degree.get(entity_id, 0))
+        by_tier.setdefault(tier, []).append(entity_id)
+
+    ranked: list[str] = []
+    for tier in sorted(by_tier.keys(), reverse=True):
+        bucket = by_tier[tier]
+        rng.shuffle(bucket)
+        ranked.extend(bucket)
+    return ranked
+
+
 def _select_targets(
     entities: list[Entity],
     edges: list,
@@ -110,7 +158,9 @@ def _select_targets(
 ) -> tuple[str, ...]:
     """Select 60 deterministic change targets with outgoing dependency paths."""
     rng = make_rng(seed_tag("ecosystem", ecosystem_id), 0, "targets")
-    outgoing = {edge.source_id for edge in edges}
+    out_degree = _out_degree_by_source(edges)
+    outgoing = set(out_degree)
+    unsafe_sources = _ground_truth_unsafe_sources(entities, edges)
 
     agents = [
         e.entity_id
@@ -122,18 +172,20 @@ def _select_targets(
         for e in entities
         if e.entity_type != EntityType.AGENT and e.entity_id in outgoing
     ]
-    rng.shuffle(agents)
-    rng.shuffle(others)
 
-    selected = agents[: min(len(agents), count)]
-    if len(selected) < count:
-        selected.extend(others[: count - len(selected)])
-    if len(selected) < count:
-        remainder = [e.entity_id for e in entities if e.entity_id in outgoing]
-        rng.shuffle(remainder)
+    ranked = _rank_by_outgoing(
+        agents, out_degree, rng, unsafe_sources=unsafe_sources
+    ) + _rank_by_outgoing(others, out_degree, rng, unsafe_sources=unsafe_sources)
+    if len(ranked) < count:
+        remainder = _rank_by_outgoing(
+            [e.entity_id for e in entities if e.entity_id in outgoing],
+            out_degree,
+            rng,
+            unsafe_sources=unsafe_sources,
+        )
         for entity_id in remainder:
-            if entity_id not in selected:
-                selected.append(entity_id)
-            if len(selected) >= count:
+            if entity_id not in ranked:
+                ranked.append(entity_id)
+            if len(ranked) >= count:
                 break
-    return tuple(selected[:count])
+    return tuple(ranked[:count])

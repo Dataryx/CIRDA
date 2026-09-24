@@ -20,41 +20,47 @@ SECONDARY_DIRECT_OBS_RANGE = (3, 5)
 
 UNIVERSAL_TRACE_RATE = 0.85
 UNIVERSAL_TRACE_OBS_RANGE = (3, 5)
+WEAK_DUAL_CHANNEL_FROM_LOSS = 0.60
 
 WEAK_EDGE_FRACTION = 0.60
 WEAK_EDGE_FRACTION_BY_LOSS: dict[float, float] = {
     0.30: 0.54,
-    0.45: 0.62,
-    0.60: 0.67,
+    0.45: 0.635,
+    0.60: 0.725,
 }
 WEAK_OBS_RANGE = (7, 11)
+WEAK_OBS_RANGE_BY_LOSS: dict[float, tuple[int, int]] = {
+    0.45: (8, 12),
+    0.60: (10, 13),
+}
 WEAK_NOISE_RATE = 0.014
 WEAK_NOISE_RATE_BY_LOSS: dict[float, float] = {
-    0.30: 0.009,
-    0.45: 0.017,
-    0.60: 0.030,
+    0.30: 0.007,
+    0.45: 0.020,
+    0.60: 0.031,
 }
+WEAK_NOISE_KEEP_ALL_OR_NOTHING_FROM_LOSS = 0.45
 
 LOW_LOSS_DIRECT_EXTRA_DROP: dict[float, float] = {
-    0.30: 0.085,
-    0.45: 0.05,
+    0.30: 0.078,
+    0.45: 0.048,
 }
 
 TRACE_PHANTOM_RATE_BY_LOSS: dict[float, float] = {
-    0.30: 0.12,
-    0.45: 0.10,
-    0.60: 0.085,
+    0.30: 0.105,
+    0.45: 0.09,
+    0.60: 0.08,
 }
 TRACE_MIN_OBSERVATIONS = 1
 TRACE_METHOD_EXTRA_DROP: dict[float, float] = {
-    0.30: 0.014,
-    0.45: 0.012,
-    0.60: 0.030,
+    0.30: 0.008,
+    0.45: 0.007,
+    0.60: 0.026,
 }
 TRACE_CRITICAL_PATH_DROP: dict[float, float] = {
-    0.30: 0.69,
-    0.45: 0.62,
-    0.60: 0.63,
+    0.30: 0.74,
+    0.45: 0.66,
+    0.60: 0.64,
 }
 
 WEAK_NOISE_MIN_OBS = 4
@@ -69,6 +75,10 @@ class TelemetryProfile:
 
 def weak_edge_fraction(loss: float) -> float:
     return WEAK_EDGE_FRACTION_BY_LOSS.get(loss, WEAK_EDGE_FRACTION)
+
+
+def weak_obs_range(loss: float) -> tuple[int, int]:
+    return WEAK_OBS_RANGE_BY_LOSS.get(loss, WEAK_OBS_RANGE)
 
 
 def weak_noise_rate_for_loss(loss: float) -> float:

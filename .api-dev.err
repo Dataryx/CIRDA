@@ -1,7 +1,13 @@
+   Building cirda-api @ file:///C:/Indominus/Project/CIRDA/apps/api
+   Building cirda-core @ file:///C:/Indominus/Project/CIRDA/packages/cirda-core
+      Built cirda-core @ file:///C:/Indominus/Project/CIRDA/packages/cirda-core
+      Built cirda-api @ file:///C:/Indominus/Project/CIRDA/apps/api
+Uninstalled 2 packages in 16ms
+Installed 2 packages in 31ms
 INFO:     Will watch for changes in these directories: ['C:\\Indominus\\Project\\CIRDA\\apps\\api']
 INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
-INFO:     Started reloader process [9232] using WatchFiles
-INFO:     Started server process [24944]
+INFO:     Started reloader process [22964] using WatchFiles
+INFO:     Started server process [3200]
 INFO:     Waiting for application startup.
 INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
 INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("aliases")
@@ -82,13 +88,13 @@ CREATE TABLE audit_log (
 )
 
 
-INFO:sqlalchemy.engine.Engine:[no key 0.00075s] ()
-INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_audit_log_principal_id ON audit_log (principal_id)
-INFO:sqlalchemy.engine.Engine:[no key 0.00043s] ()
+INFO:sqlalchemy.engine.Engine:[no key 0.00037s] ()
 INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_audit_log_created_at ON audit_log (created_at)
 INFO:sqlalchemy.engine.Engine:[no key 0.00036s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_audit_log_principal_id ON audit_log (principal_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00035s] ()
 INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_audit_log_action ON audit_log (action)
-INFO:sqlalchemy.engine.Engine:[no key 0.00043s] ()
+INFO:sqlalchemy.engine.Engine:[no key 0.00025s] ()
 INFO:sqlalchemy.engine.Engine:
 CREATE TABLE benchmark_runs (
 	run_id VARCHAR(36) NOT NULL, 
@@ -102,9 +108,9 @@ CREATE TABLE benchmark_runs (
 )
 
 
-INFO:sqlalchemy.engine.Engine:[no key 0.00035s] ()
+INFO:sqlalchemy.engine.Engine:[no key 0.00029s] ()
 INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_benchmark_runs_status ON benchmark_runs (status)
-INFO:sqlalchemy.engine.Engine:[no key 0.00035s] ()
+INFO:sqlalchemy.engine.Engine:[no key 0.00029s] ()
 INFO:sqlalchemy.engine.Engine:
 CREATE TABLE calibration_profiles (
 	profile_id VARCHAR(36) NOT NULL, 
@@ -119,7 +125,7 @@ CREATE TABLE calibration_profiles (
 )
 
 
-INFO:sqlalchemy.engine.Engine:[no key 0.00035s] ()
+INFO:sqlalchemy.engine.Engine:[no key 0.00027s] ()
 INFO:sqlalchemy.engine.Engine:
 CREATE TABLE channel_health (
 	channel VARCHAR(32) NOT NULL, 
@@ -131,7 +137,7 @@ CREATE TABLE channel_health (
 )
 
 
-INFO:sqlalchemy.engine.Engine:[no key 0.00033s] ()
+INFO:sqlalchemy.engine.Engine:[no key 0.00029s] ()
 INFO:sqlalchemy.engine.Engine:
 CREATE TABLE coverage_snapshots (
 	snapshot_id VARCHAR(36) NOT NULL, 
@@ -147,7 +153,7 @@ CREATE TABLE coverage_snapshots (
 
 INFO:sqlalchemy.engine.Engine:[no key 0.00037s] ()
 INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_coverage_snapshots_captured_at ON coverage_snapshots (captured_at)
-INFO:sqlalchemy.engine.Engine:[no key 0.00035s] ()
+INFO:sqlalchemy.engine.Engine:[no key 0.00034s] ()
 INFO:sqlalchemy.engine.Engine:
 CREATE TABLE entities (
 	entity_id VARCHAR(128) NOT NULL, 
@@ -161,9 +167,9 @@ CREATE TABLE entities (
 )
 
 
-INFO:sqlalchemy.engine.Engine:[no key 0.00040s] ()
+INFO:sqlalchemy.engine.Engine:[no key 0.00026s] ()
 INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_entities_entity_type ON entities (entity_type)
-INFO:sqlalchemy.engine.Engine:[no key 0.00037s] ()
+INFO:sqlalchemy.engine.Engine:[no key 0.00028s] ()
 INFO:sqlalchemy.engine.Engine:
 CREATE TABLE evidence_events (
 	event_id VARCHAR(128) NOT NULL, 
@@ -182,17 +188,17 @@ CREATE TABLE evidence_events (
 )
 
 
-INFO:sqlalchemy.engine.Engine:[no key 0.00047s] ()
-INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_evidence_events_target_id ON evidence_events (target_id)
-INFO:sqlalchemy.engine.Engine:[no key 0.00042s] ()
-INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_evidence_events_idempotency_key ON evidence_events (idempotency_key)
-INFO:sqlalchemy.engine.Engine:[no key 0.00042s] ()
-INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_evidence_events_source_id ON evidence_events (source_id)
-INFO:sqlalchemy.engine.Engine:[no key 0.00041s] ()
+INFO:sqlalchemy.engine.Engine:[no key 0.00048s] ()
 INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_evidence_events_observed_at ON evidence_events (observed_at)
-INFO:sqlalchemy.engine.Engine:[no key 0.00037s] ()
+INFO:sqlalchemy.engine.Engine:[no key 0.00038s] ()
 INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_evidence_events_channel ON evidence_events (channel)
-INFO:sqlalchemy.engine.Engine:[no key 0.00035s] ()
+INFO:sqlalchemy.engine.Engine:[no key 0.00034s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_evidence_events_target_id ON evidence_events (target_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00027s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_evidence_events_idempotency_key ON evidence_events (idempotency_key)
+INFO:sqlalchemy.engine.Engine:[no key 0.00027s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_evidence_events_source_id ON evidence_events (source_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00025s] ()
 INFO:sqlalchemy.engine.Engine:
 CREATE TABLE principals (
 	principal_id VARCHAR(128) NOT NULL, 
@@ -207,7 +213,7 @@ CREATE TABLE principals (
 )
 
 
-INFO:sqlalchemy.engine.Engine:[no key 0.00036s] ()
+INFO:sqlalchemy.engine.Engine:[no key 0.00029s] ()
 INFO:sqlalchemy.engine.Engine:
 CREATE TABLE aliases (
 	alias_id VARCHAR(36) NOT NULL, 
@@ -221,11 +227,11 @@ CREATE TABLE aliases (
 )
 
 
-INFO:sqlalchemy.engine.Engine:[no key 0.00045s] ()
+INFO:sqlalchemy.engine.Engine:[no key 0.00033s] ()
 INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_aliases_entity_id ON aliases (entity_id)
-INFO:sqlalchemy.engine.Engine:[no key 0.00040s] ()
+INFO:sqlalchemy.engine.Engine:[no key 0.00026s] ()
 INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_aliases_alias ON aliases (alias)
-INFO:sqlalchemy.engine.Engine:[no key 0.00035s] ()
+INFO:sqlalchemy.engine.Engine:[no key 0.00031s] ()
 INFO:sqlalchemy.engine.Engine:
 CREATE TABLE benchmark_results (
 	result_id VARCHAR(36) NOT NULL, 
@@ -240,9 +246,9 @@ CREATE TABLE benchmark_results (
 )
 
 
-INFO:sqlalchemy.engine.Engine:[no key 0.00039s] ()
+INFO:sqlalchemy.engine.Engine:[no key 0.00033s] ()
 INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_benchmark_results_run_id ON benchmark_results (run_id)
-INFO:sqlalchemy.engine.Engine:[no key 0.00036s] ()
+INFO:sqlalchemy.engine.Engine:[no key 0.00031s] ()
 INFO:sqlalchemy.engine.Engine:
 CREATE TABLE decisions (
 	decision_id VARCHAR(36) NOT NULL, 
@@ -266,13 +272,13 @@ CREATE TABLE decisions (
 )
 
 
-INFO:sqlalchemy.engine.Engine:[no key 0.00044s] ()
+INFO:sqlalchemy.engine.Engine:[no key 0.00029s] ()
 INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_decisions_as_of ON decisions (as_of)
+INFO:sqlalchemy.engine.Engine:[no key 0.00030s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_decisions_entity_id ON decisions (entity_id)
 INFO:sqlalchemy.engine.Engine:[no key 0.00037s] ()
 INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_decisions_verdict ON decisions (verdict)
-INFO:sqlalchemy.engine.Engine:[no key 0.00038s] ()
-INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_decisions_entity_id ON decisions (entity_id)
-INFO:sqlalchemy.engine.Engine:[no key 0.00047s] ()
+INFO:sqlalchemy.engine.Engine:[no key 0.00028s] ()
 INFO:sqlalchemy.engine.Engine:
 CREATE TABLE edges (
 	edge_id VARCHAR(256) NOT NULL, 
@@ -294,13 +300,13 @@ CREATE TABLE edges (
 )
 
 
-INFO:sqlalchemy.engine.Engine:[no key 0.00039s] ()
-INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_edges_source_id ON edges (source_id)
-INFO:sqlalchemy.engine.Engine:[no key 0.00035s] ()
+INFO:sqlalchemy.engine.Engine:[no key 0.00028s] ()
 INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_edges_target_id ON edges (target_id)
-INFO:sqlalchemy.engine.Engine:[no key 0.00041s] ()
+INFO:sqlalchemy.engine.Engine:[no key 0.00026s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_edges_source_id ON edges (source_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00026s] ()
 INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_edges_layer ON edges (layer)
-INFO:sqlalchemy.engine.Engine:[no key 0.00037s] ()
+INFO:sqlalchemy.engine.Engine:[no key 0.00027s] ()
 INFO:sqlalchemy.engine.Engine:
 CREATE TABLE decision_paths (
 	path_id VARCHAR(36) NOT NULL, 
@@ -313,9 +319,9 @@ CREATE TABLE decision_paths (
 )
 
 
-INFO:sqlalchemy.engine.Engine:[no key 0.00037s] ()
+INFO:sqlalchemy.engine.Engine:[no key 0.00031s] ()
 INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_decision_paths_decision_id ON decision_paths (decision_id)
-INFO:sqlalchemy.engine.Engine:[no key 0.00041s] ()
+INFO:sqlalchemy.engine.Engine:[no key 0.00028s] ()
 INFO:sqlalchemy.engine.Engine:
 CREATE TABLE runbook_executions (
 	execution_id VARCHAR(36) NOT NULL, 
@@ -330,9 +336,9 @@ CREATE TABLE runbook_executions (
 )
 
 
-INFO:sqlalchemy.engine.Engine:[no key 0.00033s] ()
+INFO:sqlalchemy.engine.Engine:[no key 0.00032s] ()
 INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_runbook_executions_decision_id ON runbook_executions (decision_id)
-INFO:sqlalchemy.engine.Engine:[no key 0.00037s] ()
+INFO:sqlalchemy.engine.Engine:[no key 0.00029s] ()
 INFO:sqlalchemy.engine.Engine:
 CREATE TABLE edge_channel_evidence (
 	id VARCHAR(36) NOT NULL, 
@@ -346,9 +352,9 @@ CREATE TABLE edge_channel_evidence (
 )
 
 
-INFO:sqlalchemy.engine.Engine:[no key 0.00044s] ()
+INFO:sqlalchemy.engine.Engine:[no key 0.00031s] ()
 INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_edge_channel_evidence_edge_id ON edge_channel_evidence (edge_id)
-INFO:sqlalchemy.engine.Engine:[no key 0.00040s] ()
+INFO:sqlalchemy.engine.Engine:[no key 0.00030s] ()
 INFO:sqlalchemy.engine.Engine:
 CREATE TABLE edge_versions (
 	version_id VARCHAR(36) NOT NULL, 
@@ -364,8 +370,8 @@ CREATE TABLE edge_versions (
 )
 
 
-INFO:sqlalchemy.engine.Engine:[no key 0.00049s] ()
+INFO:sqlalchemy.engine.Engine:[no key 0.00033s] ()
 INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_edge_versions_edge_id ON edge_versions (edge_id)
-INFO:sqlalchemy.engine.Engine:[no key 0.00046s] ()
+INFO:sqlalchemy.engine.Engine:[no key 0.00029s] ()
 INFO:sqlalchemy.engine.Engine:COMMIT
 INFO:     Application startup complete.

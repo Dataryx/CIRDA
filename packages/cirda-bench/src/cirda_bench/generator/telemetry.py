@@ -16,9 +16,12 @@ from cirda_bench.calibration import (
     TRACE_PRIMARY_OBS_RANGE,
     UNIVERSAL_TRACE_OBS_RANGE,
     UNIVERSAL_TRACE_RATE,
+    WEAK_DUAL_CHANNEL_FROM_LOSS,
     VISIBILITY,
     WEAK_EDGE_FRACTION,
     weak_edge_fraction,
+    weak_obs_range,
+    WEAK_NOISE_KEEP_ALL_OR_NOTHING_FROM_LOSS,
     WEAK_NOISE_MIN_OBS,
     WEAK_NOISE_RATE,
     WEAK_OBS_RANGE,
@@ -112,11 +115,15 @@ def generate_edge_telemetry(
             observations[EvidenceChannel.TRACE] = rng.randint(lo, hi)
 
         if rng.random() < weak_edge_fraction(loss):
-            lo, hi = WEAK_OBS_RANGE
-            if rng.random() < 0.55:
+            lo, hi = weak_obs_range(loss)
+            if loss >= WEAK_DUAL_CHANNEL_FROM_LOSS:
                 observations[EvidenceChannel.TEMPORAL_CORRELATION] = rng.randint(lo, hi)
-            if rng.random() < 0.50:
                 observations[EvidenceChannel.SHARED_RESOURCE] = rng.randint(lo, hi)
+            else:
+                if rng.random() < 0.55:
+                    observations[EvidenceChannel.TEMPORAL_CORRELATION] = rng.randint(lo, hi)
+                if rng.random() < 0.50:
+                    observations[EvidenceChannel.SHARED_RESOURCE] = rng.randint(lo, hi)
 
         records.append(
             EdgeTelemetry(
@@ -223,6 +230,9 @@ def apply_loss(
                         continue
                     kept[channel] = count
             elif not record.is_spurious:
+                if rng.random() < keep_p:
+                    kept[channel] = count
+            elif loss >= WEAK_NOISE_KEEP_ALL_OR_NOTHING_FROM_LOSS:
                 if rng.random() < keep_p:
                     kept[channel] = count
             else:

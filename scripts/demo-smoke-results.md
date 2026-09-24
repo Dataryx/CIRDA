@@ -1,28 +1,48 @@
 # Demo smoke results
 
-## Live stack (memory store)
+## Live stack (memory store / `dev-lite`)
 
 | Check | Result |
 |-------|--------|
 | API `/api/v1/health` | PASS |
 | Seed (HTTP `--force`) | PASS — 10 entities, 15 events, channel health |
-| `invoice-reconciler-agent` | **UNSAFE** (coverage 1.0) |
-| `legacy-csv-export-agent` | **SAFE** (coverage 1.0) |
-| `vendor-risk-agent` | **INDETERMINATE** (coverage ≈0.727, target-scoped silent DB/messaging) |
+| `invoice-reconciler-agent` | **UNSAFE** |
+| `legacy-csv-export-agent` | **SAFE** |
+| `vendor-risk-agent` | **INDETERMINATE** (target-scoped silent DB/messaging → C ≈ 0.73) |
 
 ## Playwright E2E (live API, no MSW)
 
-`PLAYWRIGHT_SKIP_WEBSERVER=1 pnpm e2e` → **10 passed, 1 skipped** (axe soft-skip until `@axe-core/playwright` is installed).
+`PLAYWRIGHT_SKIP_WEBSERVER=1 pnpm e2e` → **11 passed** (including axe WCAG serious/critical = 0).
 
-Covered: overview, topology, UNSAFE / INDETERMINATE / SAFE decommission paths, evidence drilldown, coverage, benchmark synthetic banner, a11y landmarks.
+Covered: overview, topology, UNSAFE / INDETERMINATE / SAFE decommission, evidence, coverage, benchmark synthetic banner, a11y landmarks + axe.
 
-## How to reproduce
+## Benchmark gates
+
+- CIRDA `false_safe == 0.000` at m ∈ {0.30, 0.45, 0.60} — **exact**
+- Table II: **33/60** metrics within tolerance; remaining gaps documented in `packages/cirda-bench/CALIBRATION.md` (no golden overlays)
+- CIRDA decision_coverage within tolerance at all three report losses; CIRDA m=0.30 fully within tolerance
+
+## Docker Compose (Postgres)
+
+Requires Docker Desktop running:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/compose-up.ps1
+# Web http://localhost:3000  API http://localhost:8000
+```
+
+Lite profile: Postgres + Redis + API + Web. Migrations run on API start; seed runs after health.
+
+## How to reproduce (memory)
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/dev-lite.ps1
-# or manually:
-#   API + seed already documented in README
+# or: API on :8000 + web on :5173 + seed_demo_estate.py
+
 cd apps/web
 $env:PLAYWRIGHT_SKIP_WEBSERVER = '1'
 pnpm e2e
+
+# from repo root
+powershell -ExecutionPolicy Bypass -File scripts/verify.ps1
 ```
