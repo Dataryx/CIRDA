@@ -75,6 +75,61 @@ export function DecisionReportPage() {
         <StatCard title="Evaluated" value={formatDateTime(report.as_of)} />
       </div>
 
+      {report.paths && report.paths.length > 0 ? (
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="text-base">Critical paths (load-bearing)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Path</TableHead>
+                  <TableHead className="w-[1%] whitespace-nowrap">Confidence</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {report.paths.map((path, index) => {
+                  const nodes =
+                    'path_nodes' in path && Array.isArray(path.path_nodes)
+                      ? path.path_nodes
+                      : 'nodes' in path && Array.isArray((path as { nodes?: string[] }).nodes)
+                        ? (path as { nodes: string[] }).nodes
+                        : [];
+                  const confidence =
+                    typeof path === 'object' &&
+                    path !== null &&
+                    'path_confidence' in path &&
+                    typeof path.path_confidence === 'number'
+                      ? path.path_confidence
+                      : null;
+                  return (
+                    <TableRow key={`${nodes.join('→')}-${index}`}>
+                      <TableCell className="font-mono text-xs">
+                        {nodes.map((node, i) => (
+                          <span key={`${node}-${i}`}>
+                            {i > 0 ? ' → ' : null}
+                            <Link
+                              to={`/entities/${encodeURIComponent(node)}`}
+                              className="text-primary hover:underline"
+                            >
+                              {node}
+                            </Link>
+                          </span>
+                        ))}
+                      </TableCell>
+                      <TableCell className="font-mono tabular-nums">
+                        {confidence === null ? '—' : confidence.toFixed(3)}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      ) : null}
+
       {rationale ? (
         <div className="mt-6 grid gap-6 lg:grid-cols-2">
           <Card>

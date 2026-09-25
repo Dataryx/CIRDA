@@ -6,6 +6,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 
+from cirda_core.analysis.critical_paths import enumerate_critical_paths
 from cirda_core.decision.explanation import explain_decision
 from cirda_core.decision.gate import evaluate_gate_from_layers
 from cirda_core.decision.probe_planner import estimate_probe_delta_c, plan_probes
@@ -90,6 +91,18 @@ class DecisionService:
                 )
             ]
         decision_id = str(uuid.uuid4())
+        paths = [
+            {
+                "path_nodes": list(p.path_nodes),
+                "path_confidence": p.path_confidence,
+                "is_critical_path": p.is_critical_path,
+            }
+            for p in enumerate_critical_paths(
+                g_p,
+                entity_id,
+                criticality_threshold=policy.critical_threshold,
+            )
+        ]
         record = {
             "decision_id": decision_id,
             "entity_id": entity_id,
@@ -103,7 +116,7 @@ class DecisionService:
             "change_type": change_type,
             "supersedes_id": supersedes_id,
             "created_by": created_by,
-            "paths": [],
+            "paths": paths,
         }
         stored = await self.decision_repo.create(record)
         if supersedes_id:

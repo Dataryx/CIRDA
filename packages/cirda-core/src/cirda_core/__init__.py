@@ -2,6 +2,7 @@
 
 from cirda_core import domain
 from cirda_core.analysis.blast_radius import BlastRadius, compute_blast_radius
+from cirda_core.analysis.critical_paths import CriticalPath, enumerate_critical_paths
 from cirda_core.config.calibration import CalibrationParams, validate_calibration
 from cirda_core.config.channels import CHANNEL_PROFILES, ChannelProfile, get_channel_profile
 from cirda_core.config.constants import C_MIN, HALF_LIFE, THETA_C, THETA_P, half_life_seconds
@@ -33,6 +34,7 @@ __all__ = [
     "CalibrationParams",
     "ChannelObservation",
     "ChannelProfile",
+    "CriticalPath",
     "DEFAULT_POLICY",
     "ENGINE_VERSION",
     "EntityResolver",
@@ -58,6 +60,7 @@ __all__ = [
     "default_runbook_for_verdict",
     "descendants_within_depth",
     "domain",
+    "enumerate_critical_paths",
     "estimate_coverage",
     "estimate_probe_delta_c",
     "evaluate_gate",

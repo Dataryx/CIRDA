@@ -149,9 +149,10 @@ export interface DecisionRationale {
 }
 
 export interface DecisionPath {
-  nodes: string[];
-  edges: string[];
-  length?: number;
+  path_nodes: string[];
+  path_confidence: number;
+  is_critical_path?: boolean;
+  path_id?: string;
 }
 
 export interface DecisionReport {

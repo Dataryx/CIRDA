@@ -71,7 +71,13 @@ export function createDecisionReport(overrides: Partial<DecisionReport> = {}): D
       'Limitations (§X): CIRDA decisions reflect observability coverage and inferred dependency structure at the evaluation timestamp.',
     as_of: '2026-01-15T12:00:00Z',
     engine_version: '0.1.0-test',
-    paths: [],
+    paths: [
+      {
+        path_nodes: ['svc-billing', 'db-payments'],
+        path_confidence: 0.87,
+        is_critical_path: true,
+      },
+    ],
     ...overrides,
   };
 }

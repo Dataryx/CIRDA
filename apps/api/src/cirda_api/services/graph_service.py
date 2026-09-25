@@ -79,4 +79,6 @@ class GraphService:
         domain_edges = [EdgeRepository.to_domain(e) for e in edges_raw]
         if layer == GraphLayer.CONFIRMED:
             domain_edges = [e for e in domain_edges if e.layer == GraphLayer.CONFIRMED]
-        return build_digraph(domain_entities, domain_edges, layer=layer if layer == GraphLayer.POSSIBLE else None)
+            return build_digraph(domain_entities, domain_edges, layer=None)
+        # POSSIBLE view = confirmed ∪ possible (INV-014).
+        return build_digraph(domain_entities, domain_edges, layer=None)

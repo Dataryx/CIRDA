@@ -168,3 +168,98 @@ async def test_probe_apply_forbidden_when_execution_disabled(client: AsyncClient
     assert response.status_code == 403
 
     settings.probe_planning_enabled = False
+
+
+@pytest.mark.asyncio
+async def test_decision_evaluate_includes_critical_paths(client: AsyncClient) -> None:
+    from datetime import datetime, timezone
+
+    headers = {"Authorization": "Bearer dev", "X-CIRDA-Role": "analyst"}
+    await client.post(
+        "/api/v1/entities",
+        json={
+            "entity_id": "path-agent",
+            "entity_type": "agent",
+            "name": "Path Agent",
+            "criticality": "low",
+        },
+        headers=headers,
+    )
+    await client.post(
+        "/api/v1/entities",
+        json={
+            "entity_id": "path-ledger",
+            "entity_type": "data",
+            "name": "Path Ledger",
+            "criticality": "critical",
+        },
+        headers=headers,
+    )
+    await client.post(
+        "/api/v1/entities",
+        json={
+            "entity_id": "path-queue",
+            "entity_type": "queue",
+            "name": "Path Queue",
+            "criticality": "high",
+        },
+        headers=headers,
+    )
+    for i in range(4):
+        await client.post(
+            "/api/v1/ingest/events",
+            json={
+                "raw": {
+                    "source": "trace",
+                    "event_id": f"path-ledger-ev-{i}",
+                    "source_id": "path-agent",
+                    "target_id": "path-ledger",
+                    "relation": "writes",
+                    "observed_at": datetime.now(timezone.utc).isoformat(),
+                }
+            },
+            headers=headers,
+        )
+    for i in range(4):
+        await client.post(
+            "/api/v1/ingest/events",
+            json={
+                "raw": {
+                    "source": "trace",
+                    "event_id": f"path-queue-ev-{i}",
+                    "source_id": "path-agent",
+                    "target_id": "path-queue",
+                    "relation": "publishes",
+                    "observed_at": datetime.now(timezone.utc).isoformat(),
+                }
+            },
+            headers=headers,
+        )
+    await client.patch(
+        "/api/v1/edges/path-agent->path-queue:publishes",
+        json={"necessity": "optional"},
+        headers=headers,
+    )
+
+    evaluate = await client.post(
+        "/api/v1/decisions/evaluate",
+        json={"entity_id": "path-agent", "change_type": "retirement"},
+        headers={"Authorization": "Bearer dev", "X-CIRDA-Role": "approver"},
+    )
+    assert evaluate.status_code == 201
+    body = evaluate.json()
+    assert body["verdict"] == "UNSAFE"
+    paths = body["paths"]
+    assert paths
+    assert all(p["is_critical_path"] for p in paths)
+    assert any(p["path_nodes"] == ["path-agent", "path-ledger"] for p in paths)
+    assert all("path-queue" not in p["path_nodes"] for p in paths)
+
+    analysis = await client.get(
+        "/api/v1/analysis/paths",
+        params={"source_id": "path-agent"},
+        headers={"Authorization": "Bearer dev", "X-CIRDA-Role": "analyst"},
+    )
+    assert analysis.status_code == 200
+    assert analysis.json()["paths"]
+    assert "reachability" not in analysis.json()

@@ -49,6 +49,13 @@ async def paths(
     _principal: RequireAnalyst,
     as_of: datetime | None = Query(None),
     target_id: str | None = Query(None),
+    max_depth: int = Query(8, ge=1, le=32),
+    max_paths: int = Query(32, ge=1, le=100),
 ) -> dict[str, object]:
-    reach = await container.analysis_service.reachability(source_id, as_of=as_of)
-    return {"source_id": source_id, "target_id": target_id, "as_of": as_of, "reachability": reach}
+    return await container.analysis_service.critical_paths(
+        source_id,
+        target_id=target_id,
+        as_of=as_of,
+        max_depth=max_depth,
+        max_paths=max_paths,
+    )

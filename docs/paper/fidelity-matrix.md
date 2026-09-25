@@ -12,6 +12,7 @@ Mapping of CIRDA paper claims to code paths and test identifiers. PDF not includ
 | Suppression detection | `cirda_core.coverage.suppression` | `incident-telemetry-suppression.md` scenario |
 | Tri-state gate (UNSAFE/SAFE/INDETERMINATE) | `cirda_core.decision.gate` | `test_zero_false_safe_at_30_45_60_loss.py` |
 | Blast radius analysis | `cirda_core.analysis.blast_radius` | `apps/api/tests/integration/test_analysis.py` |
+| Critical path enumeration | `critical_paths.py`; decision `paths`; `GET /analysis/paths` | `test_critical_paths.py`, `test_decision_flow.py` |
 | Zero false-SAFE under observability loss | `cirda_bench` harness | `test_zero_false_safe_at_30_45_60_loss.py` |
 | Table II benchmark shape | `cirda_bench.generator` | `test_reproduces_table_ii.py` |
 | Scalability shape (graph size) | `cirda_bench.scalability` | `test_scalability_shape.py` |

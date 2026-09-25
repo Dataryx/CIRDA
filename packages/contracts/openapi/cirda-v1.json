@@ -1488,6 +1488,30 @@
             }
           },
           {
+            "name": "max_depth",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 32,
+              "minimum": 1,
+              "default": 8,
+              "title": "Max Depth"
+            }
+          },
+          {
+            "name": "max_paths",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 32,
+              "title": "Max Paths"
+            }
+          },
+          {
             "name": "authorization",
             "in": "header",
             "required": false,
