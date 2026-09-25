@@ -30,6 +30,7 @@ class EvidenceEventResponse(ApiModel):
     source_type: str | None = None
     target_type: str | None = None
     payload_hash: str | None = None
+    ingested_at: datetime | None = None
 
 
 class IngestResult(ApiModel):

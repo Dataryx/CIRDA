@@ -137,6 +137,10 @@ class IngestWorker:
         self._stop_event.set()
 
     async def _enqueue(self, message: InboundMessage) -> None:
+        assert self._batcher is not None
+        if message.message_id == "__flush__":
+            await self._batcher.flush()
+            return
         self.metrics.record_received(message.source)
         token = OffsetToken(
             message_id=message.message_id,
@@ -145,8 +149,8 @@ class IngestWorker:
             offset=message.offset,
         )
         self.checkpoint.register(token)
-        assert self._batcher is not None
         await self._batcher.add(message)
+        await self._batcher.flush_if_due()
 
     async def _handle_batch(self, messages: list[InboundMessage]) -> None:
         started = time.perf_counter()
@@ -173,7 +177,9 @@ class IngestWorker:
         self.checkpoint.mark_durable(durable_ids)
         await self.checkpoint.commit_durable()
 
-        self.health.events_processed += len(result.persist.created_event_ids)
+        self.health.events_processed += (
+            len(result.persist.created_event_ids) + len(result.persist.deduped_event_ids)
+        )
         self.health.last_error = None
         self.metrics.record_batch(time.perf_counter() - started)
 

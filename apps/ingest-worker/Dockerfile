@@ -6,7 +6,7 @@ FROM python:3.12-slim AS builder
 WORKDIR /app
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends build-essential libpq-dev \
+    && apt-get install -y --no-install-recommends build-essential libpq-dev libsnappy-dev \
     && rm -rf /var/lib/apt/lists/* \
     && pip install --no-cache-dir uv
 
@@ -22,7 +22,7 @@ FROM python:3.12-slim AS runtime
 WORKDIR /app
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends libpq5 \
+    && apt-get install -y --no-install-recommends libpq5 libsnappy1v5 \
     && rm -rf /var/lib/apt/lists/* \
     && groupadd --gid 1000 cirda \
     && useradd --uid 1000 --gid cirda --create-home --shell /usr/sbin/nologin cirda \

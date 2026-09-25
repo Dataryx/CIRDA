@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any
 
-from sqlalchemy import Float, ForeignKey, Integer, String, UniqueConstraint, select
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, UniqueConstraint, select
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -18,6 +18,9 @@ from cirda_core.domain.event import EvidenceEvent
 
 def utcnow() -> datetime:
     return datetime.now(timezone.utc)
+
+
+TzDateTime = DateTime(timezone=True)
 
 
 class Base(DeclarativeBase):
@@ -31,8 +34,8 @@ class EntityRow(Base):
     entity_type: Mapped[str] = mapped_column(String(32), nullable=False)
     name: Mapped[str] = mapped_column(String(512), nullable=False)
     criticality: Mapped[str] = mapped_column(String(16), nullable=False, default="unknown")
-    created_at: Mapped[datetime] = mapped_column(nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(nullable=False)
+    created_at: Mapped[datetime] = mapped_column(TzDateTime, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(TzDateTime, nullable=False)
 
 
 class EvidenceRow(Base):
@@ -48,8 +51,8 @@ class EvidenceRow(Base):
     source_type: Mapped[str | None] = mapped_column(String(32), nullable=True)
     target_type: Mapped[str | None] = mapped_column(String(32), nullable=True)
     payload_hash: Mapped[str | None] = mapped_column(String(128), nullable=True)
-    observed_at: Mapped[datetime] = mapped_column(nullable=False, index=True)
-    ingested_at: Mapped[datetime] = mapped_column(nullable=False)
+    observed_at: Mapped[datetime] = mapped_column(TzDateTime, nullable=False, index=True)
+    ingested_at: Mapped[datetime] = mapped_column(TzDateTime, nullable=False)
 
 
 class EdgeRow(Base):
@@ -63,11 +66,11 @@ class EdgeRow(Base):
     confidence: Mapped[float] = mapped_column(Float, nullable=False)
     necessity: Mapped[str] = mapped_column(String(16), nullable=False, default="unknown")
     evidence_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    last_observed_at: Mapped[datetime | None] = mapped_column(nullable=True)
-    valid_from: Mapped[datetime] = mapped_column(nullable=False)
-    valid_to: Mapped[datetime | None] = mapped_column(nullable=True)
-    created_at: Mapped[datetime] = mapped_column(nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(nullable=False)
+    last_observed_at: Mapped[datetime | None] = mapped_column(TzDateTime, nullable=True)
+    valid_from: Mapped[datetime] = mapped_column(TzDateTime, nullable=False)
+    valid_to: Mapped[datetime | None] = mapped_column(TzDateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(TzDateTime, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(TzDateTime, nullable=False)
 
 
 class EdgeChannelRow(Base):
@@ -78,7 +81,7 @@ class EdgeChannelRow(Base):
     edge_id: Mapped[str] = mapped_column(String(256), ForeignKey("edges.edge_id", ondelete="CASCADE"), index=True)
     channel: Mapped[str] = mapped_column(String(32), nullable=False)
     observation_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    last_observed_at: Mapped[datetime | None] = mapped_column(nullable=True)
+    last_observed_at: Mapped[datetime | None] = mapped_column(TzDateTime, nullable=True)
 
 
 @dataclass(slots=True)

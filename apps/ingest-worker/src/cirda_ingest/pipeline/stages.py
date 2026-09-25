@@ -97,18 +97,35 @@ class IngestPipeline:
         permanent_failures: list[PipelineItem] = []
 
         for item in items:
-            self._stage_normalize(item)
-            if item.permanent_error:
+            try:
+                self._stage_normalize(item)
+                if item.permanent_error:
+                    permanent_failures.append(item)
+                    continue
+                self._stage_resolve(item)
+                await self._stage_candidate(item)
+                await self._stage_fuse(item)
+            except Exception as exc:
+                item.permanent_error = PermanentIngestError(str(exc))
                 permanent_failures.append(item)
-                continue
-            self._stage_resolve(item)
-            await self._stage_candidate(item)
-            await self._stage_fuse(item)
+                logger.warning(
+                    "pipeline_item_failed",
+                    message_id=item.message.message_id,
+                    error=str(exc),
+                )
 
         persist_items: list[PersistItem] = []
+        seen_event_ids: set[str] = set()
+        intra_batch_dup_message_ids: list[str] = []
         for item in items:
             if item.permanent_error or item.event is None:
                 continue
+            event_id = item.event.event_id
+            if event_id in seen_event_ids:
+                if item.message.message_id:
+                    intra_batch_dup_message_ids.append(item.message.message_id)
+                continue
+            seen_event_ids.add(event_id)
             persist_items.append(
                 PersistItem(
                     event=item.event,
@@ -119,6 +136,7 @@ class IngestPipeline:
             )
 
         persist_result = await self._stage_persist(persist_items)
+        persist_result.durable_message_ids.extend(intra_batch_dup_message_ids)
         return PipelineBatchResult(
             persist=persist_result,
             permanent_failures=permanent_failures,

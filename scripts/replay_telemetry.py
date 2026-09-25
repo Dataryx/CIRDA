@@ -57,7 +57,11 @@ def replay_kafka(path: Path, *, bootstrap: str, topic: str, rate: float) -> int:
     import asyncio
 
     async def _run() -> int:
-        producer = AIOKafkaProducer(bootstrap_servers=bootstrap)
+        producer = AIOKafkaProducer(
+            bootstrap_servers=bootstrap,
+            compression_type=None,
+            value_serializer=lambda v: v if isinstance(v, (bytes, bytearray)) else str(v).encode("utf-8"),
+        )
         await producer.start()
         sent = 0
         try:
@@ -83,7 +87,7 @@ def main() -> int:
     parser.add_argument("--target", choices=["http", "kafka"], default="http")
     parser.add_argument("--rate", type=float, default=0, help="Events per second (0 = unlimited)")
     parser.add_argument("--dry-run", action="store_true")
-    parser.add_argument("--kafka-bootstrap", default="localhost:9092")
+    parser.add_argument("--kafka-bootstrap", default="localhost:19092")
     parser.add_argument("--kafka-topic", default="cirda.evidence.raw")
     args = parser.parse_args()
 
@@ -96,7 +100,7 @@ def main() -> int:
     else:
         count = replay_kafka(
             args.file,
-            bootstrap=args.kafka-bootstrap,
+            bootstrap=args.kafka_bootstrap,
             topic=args.kafka_topic,
             rate=args.rate,
         )

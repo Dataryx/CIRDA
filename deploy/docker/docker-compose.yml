@@ -37,10 +37,11 @@ services:
       - --reserve-memory=0M
       - --node-id=0
       - --check=false
-      - --kafka-addr=PLAINTEXT://0.0.0.0:9092
-      - --advertise-kafka-addr=PLAINTEXT://redpanda:9092
+      - --kafka-addr=INTERNAL://0.0.0.0:9092,EXTERNAL://0.0.0.0:19092
+      - --advertise-kafka-addr=INTERNAL://redpanda:9092,EXTERNAL://localhost:19092
     ports:
       - "9092:9092"
+      - "19092:19092"
     healthcheck:
       test: ["CMD", "rpk", "cluster", "health"]
       interval: 10s
@@ -100,6 +101,7 @@ services:
       CIRDA_MEMORY_STORE: "false"
       CIRDA_EVENT_BUS: kafka
       CIRDA_KAFKA_BOOTSTRAP_SERVERS: redpanda:9092
+      CIRDA_KAFKA_GROUP_ID: cirda-ingest
       CIRDA_DATABASE_URL: postgresql+asyncpg://cirda:cirda@postgres:5432/cirda
       CIRDA_REDIS_URL: redis://redis:6379/1
       CIRDA_OTLP_LISTEN_PORT: "4318"

@@ -1,56 +1,55 @@
 # Demo smoke results
 
-## Live stack (Compose lite / Postgres)
+## Live stack (Compose full)
 
 | Check | Result |
 |-------|--------|
 | API `/api/v1/health` | PASS |
-| Seed (HTTP `--force`) | PASS — idempotent re-ingest (duplicate `event_id` → `created=false`) |
+| Ingest `/health` (Kafka mode) | PASS — `kafka_connected=true` |
+| OTel collector | PASS (debug exporter) |
+| Seed (HTTP) | PASS |
+| Kafka → ingest → Postgres | PASS — `events_processed=3`, consumer lag 0 |
 | `invoice-reconciler-agent` | **UNSAFE** |
 | `legacy-csv-export-agent` | **SAFE** |
-| `vendor-risk-agent` | **INDETERMINATE** (target-scoped silent DB/messaging → C ≈ 0.73) |
+| `vendor-risk-agent` | **INDETERMINATE** (C ≈ 0.73) |
 
-## Playwright E2E (live Compose web + API)
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/compose-up.ps1 -Profile full
+# Produce smoke events via rpk inside Redpanda (host clients: localhost:19092):
+docker exec -i docker-redpanda-1 sh -c "tr -d '\r' < /tmp/smoke.jsonl | rpk topic produce cirda.evidence.raw"
+```
+
+## Playwright E2E (Compose web + API)
 
 ```powershell
 $env:PLAYWRIGHT_SKIP_WEBSERVER = '1'
 $env:PLAYWRIGHT_BASE_URL = 'http://localhost:3000'
 $env:CIRDA_API_URL = 'http://localhost:8000'
+$env:CI = '1'
 pnpm e2e
 ```
 
 → **11 passed** (including axe WCAG serious/critical = 0).
 
-Covered: overview, topology, UNSAFE / INDETERMINATE / SAFE decommission, evidence, coverage, benchmark synthetic banner, a11y landmarks + axe.
-
 ## Benchmark gates
 
 - CIRDA `false_safe == 0.000` at m ∈ {0.30, 0.45, 0.60} — **exact**
-- Table II: **35/60** metrics within tolerance; remaining gaps documented in `packages/cirda-bench/CALIBRATION.md` (no golden overlays)
-- CIRDA blast_precision at m=0.60 remains a residual (bp↔br tradeoff under blast-graph confidence filter)
-- CIRDA decision_coverage within tolerance at all three report losses; CIRDA m=0.30 fully within tolerance
+- Table II: **35/60** metrics within tolerance; remaining gaps in `packages/cirda-bench/CALIBRATION.md`
+- CIRDA blast_precision at m=0.60 remains a residual (bp↔br tradeoff)
 
-## Docker Compose (Postgres)
-
-Requires Docker Desktop running:
+## Compose profiles
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts/compose-up.ps1
-# Web http://localhost:3000  API http://localhost:8000
+powershell -ExecutionPolicy Bypass -File scripts/compose-up.ps1 -Profile lite   # Postgres+Redis+API+Web
+powershell -ExecutionPolicy Bypass -File scripts/compose-up.ps1 -Profile full   # + Redpanda + ingest + OTel
 ```
 
-Lite profile: Postgres + Redis + API + Web. Migrations run on API start; seed after health.
+- Full: Web http://localhost:3000 · API :8000 · Ingest :8081 · Kafka EXTERNAL :19092
+- Host Kafka clients must use `localhost:19092` (in-cluster uses `redpanda:9092`)
 
-## How to reproduce (memory)
+## How to reproduce (memory / lite)
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/dev-lite.ps1
-# or: API on :8000 + web on :5173 + seed_demo_estate.py
-
-cd apps/web
-$env:PLAYWRIGHT_SKIP_WEBSERVER = '1'
-pnpm e2e
-
-# from repo root
 powershell -ExecutionPolicy Bypass -File scripts/verify.ps1
 ```

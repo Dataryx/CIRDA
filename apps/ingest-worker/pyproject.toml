@@ -6,6 +6,7 @@ requires-python = ">=3.12"
 dependencies = [
     "cirda-core",
     "aiokafka>=0.11",
+    "python-snappy>=0.7",
     "httpx",
     "structlog",
     "prometheus-client",

@@ -61,7 +61,8 @@ def generate_candidate_edge(
     """Generate a dependency edge from grouped observations."""
     cfg = policy or PolicyConfig()
     now = clock.now()
-    age_seconds = (now - pair.last_observed).total_seconds()
+    # Clamp mild clock skew / future-dated telemetry to age 0 (fresh).
+    age_seconds = max(0.0, (now - pair.last_observed).total_seconds())
 
     observations = [
         ChannelObservation(channel=ch, count=count, age_seconds=age_seconds)

@@ -76,7 +76,7 @@ class KafkaConsumerWorker:
             group_id=self._settings.kafka_group_id,
             enable_auto_commit=False,
             auto_offset_reset="earliest",
-            value_deserializer=lambda b: json.loads(b.decode("utf-8")),
+            value_deserializer=lambda b: json.loads(b.decode("utf-8").strip()),
         )
         try:
             await asyncio.wait_for(consumer.start(), timeout=5.0)
@@ -124,21 +124,40 @@ class KafkaConsumerWorker:
 
     async def _run(self) -> None:
         assert self._consumer is not None and self._handler is not None
-        async for record in self._consumer:
-            raw = record.value
-            if not isinstance(raw, dict):
-                logger.warning("kafka_invalid_payload", offset=record.offset)
-                continue
-            message = InboundMessage(
-                raw=raw,
-                message_id=f"{record.topic}:{record.partition}:{record.offset}",
-                source="kafka",
-                idempotency_key=raw.get("idempotency_key"),
-                topic=record.topic,
-                partition=record.partition,
-                offset=record.offset,
-            )
-            await self._handler(message)
+        wait_ms = max(50, int(self._settings.batch_max_wait_seconds * 1000))
+        try:
+            while True:
+                batches = await self._consumer.getmany(
+                    timeout_ms=wait_ms,
+                    max_records=self._settings.batch_max_events,
+                )
+                if not batches:
+                    # Idle: ask handler to flush any partial micro-batch.
+                    await self._handler(
+                        InboundMessage(raw={"__flush__": True}, message_id="__flush__", source="kafka")
+                    )
+                    continue
+                for _tp, records in batches.items():
+                    for record in records:
+                        raw = record.value
+                        if not isinstance(raw, dict):
+                            logger.warning("kafka_invalid_payload", offset=record.offset)
+                            continue
+                        message = InboundMessage(
+                            raw=raw,
+                            message_id=f"{record.topic}:{record.partition}:{record.offset}",
+                            source="kafka",
+                            idempotency_key=raw.get("idempotency_key"),
+                            topic=record.topic,
+                            partition=record.partition,
+                            offset=record.offset,
+                        )
+                        await self._handler(message)
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            logger.exception("kafka_consume_loop_failed")
+            raise
 
 
 async def create_kafka_consumer(settings: Settings) -> tuple[KafkaConsumerWorker | None, str | None]:
