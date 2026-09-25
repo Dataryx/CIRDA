@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Any
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, status
+from pydantic import BaseModel, Field
 
 from cirda_api.api.dependencies import ContainerDep
 from cirda_api.api.v1.schemas.common import PageMeta
-from cirda_api.security.rbac import RequireViewer
-from pydantic import BaseModel
+from cirda_api.security.rbac import RequireAnalyst, RequireViewer
 
 
 class EdgeResponse(BaseModel):
@@ -26,6 +27,29 @@ class EdgeResponse(BaseModel):
 class EdgeListResponse(BaseModel):
     items: list[EdgeResponse]
     page: PageMeta
+
+
+class EdgeNecessityUpdate(BaseModel):
+    necessity: str = Field(
+        description="Operator necessity annotation: required|optional|redundant|fallback|unknown"
+    )
+
+
+class NecessityHintSchema(BaseModel):
+    edge_id: str
+    source_id: str
+    target_id: str
+    current_necessity: str
+    suggested_necessity: str
+    confidence: float
+    rationale: str
+    signals: dict[str, Any] = Field(default_factory=dict)
+
+
+class NecessityHintListResponse(BaseModel):
+    source_id: str
+    items: list[NecessityHintSchema]
+    mode: str = "suggest_only"
 
 
 router = APIRouter(prefix="/edges", tags=["edges"])
@@ -51,6 +75,20 @@ async def list_edges(
     )
 
 
+@router.get("/necessity-suggestions", response_model=NecessityHintListResponse)
+async def necessity_suggestions(
+    container: ContainerDep,
+    _principal: RequireViewer,
+    source_id: str = Query(..., min_length=1),
+    as_of: datetime | None = Query(None),
+) -> NecessityHintListResponse:
+    items = await container.edge_service.necessity_suggestions(source_id, as_of=as_of)
+    return NecessityHintListResponse(
+        source_id=source_id,
+        items=[NecessityHintSchema(**i) for i in items],
+    )
+
+
 @router.get("/{edge_id}", response_model=EdgeResponse)
 async def get_edge(
     edge_id: str,
@@ -61,6 +99,29 @@ async def get_edge(
     row = await container.edge_service.get_edge(edge_id, as_of=as_of)
     if not row:
         raise HTTPException(404, "Edge not found")
+    return EdgeResponse(**row)
+
+
+@router.patch("/{edge_id}", response_model=EdgeResponse)
+async def patch_edge_necessity(
+    edge_id: str,
+    body: EdgeNecessityUpdate,
+    container: ContainerDep,
+    principal: RequireAnalyst,
+) -> EdgeResponse:
+    try:
+        row = await container.edge_service.update_necessity(edge_id, body.necessity)
+    except ValueError as exc:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(exc)) from exc
+    if not row:
+        raise HTTPException(404, "Edge not found")
+    await container.audit_service.log(
+        principal_id=principal.principal_id,
+        action="edge.necessity_update",
+        resource_type="edge",
+        resource_id=edge_id,
+        details={"necessity": body.necessity},
+    )
     return EdgeResponse(**row)
 
 

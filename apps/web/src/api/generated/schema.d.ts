@@ -117,6 +117,25 @@ export interface ProbePlan {
   entity_id: string;
   channels: string[];
   rationale: string;
+  expected_delta_c?: number;
+}
+
+export interface ProbeApplyRequest {
+  entity_id: string;
+  channels: string[];
+  as_of?: string | null;
+}
+
+export interface ProbeApplyResult {
+  entity_id: string;
+  channels: string[];
+  mode: string;
+  coverage_before: number;
+  coverage_after: number;
+  expected_delta_c: number;
+  actual_delta_c: number;
+  suppressed_channels_after: string[];
+  as_of?: string | null;
 }
 
 export interface DecisionRationale {
@@ -188,6 +207,27 @@ export interface EdgeResponse {
   confidence: number;
   necessity?: string;
   evidence_count?: number;
+}
+
+export interface EdgeNecessityUpdate {
+  necessity: string;
+}
+
+export interface NecessityHint {
+  edge_id: string;
+  source_id: string;
+  target_id: string;
+  current_necessity: string;
+  suggested_necessity: string;
+  confidence: number;
+  rationale: string;
+  signals?: Record<string, unknown>;
+}
+
+export interface NecessityHintListResponse {
+  source_id: string;
+  items: NecessityHint[];
+  mode: string;
 }
 
 export interface EdgeEvidenceResponse {

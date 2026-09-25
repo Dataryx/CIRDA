@@ -36,7 +36,18 @@ def evaluate_gate(
         criticality_threshold=cfg.critical_threshold,
         max_depth=max_depth,
         max_nodes=max_nodes,
+        load_bearing_only=True,
     )
+    unfiltered = critical_descendants(
+        possible_graph,
+        source_entity_id,
+        criticality_threshold=cfg.critical_threshold,
+        max_depth=max_depth,
+        max_nodes=max_nodes,
+        load_bearing_only=False,
+    )
+    if unfiltered.reachable - reach.reachable:
+        reason_codes.add("optional_or_redundant_paths_ignored")
 
     if reach.reachable:
         reason_codes.add("critical_descendant_reachable")
@@ -89,12 +100,13 @@ def evaluate_gate(
             reason_codes=frozenset(reason_codes),
         )
 
+    reason_codes.add("all_checks_passed")
     return GateDecision(
         verdict=Verdict.SAFE,
         coverage=coverage,
         truncated=False,
         hard_blocks=frozenset(),
-        reason_codes=frozenset({"all_checks_passed"}),
+        reason_codes=frozenset(reason_codes),
     )
 
 

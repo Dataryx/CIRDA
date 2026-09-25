@@ -2986,3 +2986,2614 @@ INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_edge_versions_edge_id ON edge_vers
 INFO:sqlalchemy.engine.Engine:[no key 0.00040s] ()
 INFO:sqlalchemy.engine.Engine:COMMIT
 INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'src\cirda_api\services\coverage_service.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [39408]
+WARNING:  WatchFiles detected changes in 'tests\integration\test_decision_flow.py', 'src\cirda_api\services\coverage_service.py', 'src\cirda_api\services\decision_service.py', 'src\cirda_api\api\v1\schemas\decisions.py'. Reloading...
+INFO:     Started server process [27944]
+INFO:     Waiting for application startup.
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("aliases")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("aliases")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("audit_log")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("audit_log")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("benchmark_runs")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("benchmark_runs")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("benchmark_results")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("benchmark_results")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("calibration_profiles")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("calibration_profiles")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("channel_health")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("channel_health")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("coverage_snapshots")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("coverage_snapshots")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("decisions")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("decisions")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("decision_paths")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("decision_paths")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("runbook_executions")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("runbook_executions")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("edges")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("edges")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("edge_channel_evidence")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("edge_channel_evidence")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("edge_versions")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("edge_versions")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("entities")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("entities")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("evidence_events")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("evidence_events")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("principals")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("principals")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE audit_log (
+	log_id VARCHAR(36) NOT NULL, 
+	principal_id VARCHAR(128), 
+	action VARCHAR(64) NOT NULL, 
+	resource_type VARCHAR(64) NOT NULL, 
+	resource_id VARCHAR(128), 
+	details JSON NOT NULL, 
+	ip_address VARCHAR(64), 
+	created_at DATETIME NOT NULL, 
+	PRIMARY KEY (log_id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00025s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_audit_log_principal_id ON audit_log (principal_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00026s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_audit_log_created_at ON audit_log (created_at)
+INFO:sqlalchemy.engine.Engine:[no key 0.00025s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_audit_log_action ON audit_log (action)
+INFO:sqlalchemy.engine.Engine:[no key 0.00029s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE benchmark_runs (
+	run_id VARCHAR(36) NOT NULL, 
+	status VARCHAR(32) NOT NULL, 
+	config JSON NOT NULL, 
+	started_at DATETIME, 
+	completed_at DATETIME, 
+	error_message TEXT, 
+	created_at DATETIME NOT NULL, 
+	PRIMARY KEY (run_id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00026s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_benchmark_runs_status ON benchmark_runs (status)
+INFO:sqlalchemy.engine.Engine:[no key 0.00025s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE calibration_profiles (
+	profile_id VARCHAR(36) NOT NULL, 
+	name VARCHAR(128) NOT NULL, 
+	theta_c FLOAT NOT NULL, 
+	theta_p FLOAT NOT NULL, 
+	c_min FLOAT NOT NULL, 
+	is_active BOOLEAN NOT NULL, 
+	created_at DATETIME NOT NULL, 
+	updated_at DATETIME NOT NULL, 
+	PRIMARY KEY (profile_id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00032s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE channel_health (
+	channel VARCHAR(32) NOT NULL, 
+	health_score FLOAT NOT NULL, 
+	lag_seconds FLOAT NOT NULL, 
+	last_checked_at DATETIME NOT NULL, 
+	details VARCHAR(512), 
+	PRIMARY KEY (channel)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00034s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE coverage_snapshots (
+	snapshot_id VARCHAR(36) NOT NULL, 
+	coverage FLOAT NOT NULL, 
+	observed_entities INTEGER NOT NULL, 
+	total_entities INTEGER NOT NULL, 
+	suppressed_channels JSON NOT NULL, 
+	scope VARCHAR(128), 
+	captured_at DATETIME NOT NULL, 
+	PRIMARY KEY (snapshot_id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00029s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_coverage_snapshots_captured_at ON coverage_snapshots (captured_at)
+INFO:sqlalchemy.engine.Engine:[no key 0.00030s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE entities (
+	entity_id VARCHAR(128) NOT NULL, 
+	entity_type VARCHAR(32) NOT NULL, 
+	name VARCHAR(512) NOT NULL, 
+	criticality VARCHAR(16) NOT NULL, 
+	metadata JSON NOT NULL, 
+	created_at DATETIME NOT NULL, 
+	updated_at DATETIME NOT NULL, 
+	PRIMARY KEY (entity_id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00025s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_entities_entity_type ON entities (entity_type)
+INFO:sqlalchemy.engine.Engine:[no key 0.00024s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE evidence_events (
+	event_id VARCHAR(128) NOT NULL, 
+	idempotency_key VARCHAR(256), 
+	source_id VARCHAR(128) NOT NULL, 
+	target_id VARCHAR(128) NOT NULL, 
+	relation VARCHAR(32) NOT NULL, 
+	channel VARCHAR(32) NOT NULL, 
+	source_type VARCHAR(32), 
+	target_type VARCHAR(32), 
+	payload_hash VARCHAR(128), 
+	observed_at DATETIME NOT NULL, 
+	ingested_at DATETIME NOT NULL, 
+	PRIMARY KEY (event_id), 
+	CONSTRAINT uq_evidence_idempotency UNIQUE (idempotency_key)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00026s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_evidence_events_target_id ON evidence_events (target_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00031s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_evidence_events_idempotency_key ON evidence_events (idempotency_key)
+INFO:sqlalchemy.engine.Engine:[no key 0.00032s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_evidence_events_source_id ON evidence_events (source_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00033s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_evidence_events_observed_at ON evidence_events (observed_at)
+INFO:sqlalchemy.engine.Engine:[no key 0.00029s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_evidence_events_channel ON evidence_events (channel)
+INFO:sqlalchemy.engine.Engine:[no key 0.00030s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE principals (
+	principal_id VARCHAR(128) NOT NULL, 
+	subject VARCHAR(256) NOT NULL, 
+	roles JSON NOT NULL, 
+	api_key_hash VARCHAR(256), 
+	is_active BOOLEAN NOT NULL, 
+	created_at DATETIME NOT NULL, 
+	updated_at DATETIME NOT NULL, 
+	PRIMARY KEY (principal_id), 
+	UNIQUE (subject)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00030s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE aliases (
+	alias_id VARCHAR(36) NOT NULL, 
+	entity_id VARCHAR(128) NOT NULL, 
+	alias VARCHAR(512) NOT NULL, 
+	source VARCHAR(64), 
+	created_at DATETIME NOT NULL, 
+	PRIMARY KEY (alias_id), 
+	CONSTRAINT uq_alias_entity_alias UNIQUE (entity_id, alias), 
+	FOREIGN KEY(entity_id) REFERENCES entities (entity_id) ON DELETE CASCADE
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00028s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_aliases_entity_id ON aliases (entity_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00025s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_aliases_alias ON aliases (alias)
+INFO:sqlalchemy.engine.Engine:[no key 0.00024s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE benchmark_results (
+	result_id VARCHAR(36) NOT NULL, 
+	run_id VARCHAR(36) NOT NULL, 
+	loss FLOAT NOT NULL, 
+	method VARCHAR(32) NOT NULL, 
+	metrics JSON NOT NULL, 
+	data_class VARCHAR(64) NOT NULL, 
+	created_at DATETIME NOT NULL, 
+	PRIMARY KEY (result_id), 
+	FOREIGN KEY(run_id) REFERENCES benchmark_runs (run_id) ON DELETE CASCADE
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00030s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_benchmark_results_run_id ON benchmark_results (run_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00034s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE decisions (
+	decision_id VARCHAR(36) NOT NULL, 
+	entity_id VARCHAR(128) NOT NULL, 
+	verdict VARCHAR(16) NOT NULL, 
+	coverage FLOAT NOT NULL, 
+	truncated BOOLEAN NOT NULL, 
+	reason_codes JSON NOT NULL, 
+	rationale JSON NOT NULL, 
+	as_of DATETIME NOT NULL, 
+	engine_version VARCHAR(16) NOT NULL, 
+	change_type VARCHAR(64), 
+	supersedes_id VARCHAR(36), 
+	superseded_by_id VARCHAR(36), 
+	created_at DATETIME NOT NULL, 
+	created_by VARCHAR(128), 
+	PRIMARY KEY (decision_id), 
+	FOREIGN KEY(entity_id) REFERENCES entities (entity_id), 
+	FOREIGN KEY(supersedes_id) REFERENCES decisions (decision_id), 
+	FOREIGN KEY(superseded_by_id) REFERENCES decisions (decision_id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00055s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_decisions_verdict ON decisions (verdict)
+INFO:sqlalchemy.engine.Engine:[no key 0.00027s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_decisions_as_of ON decisions (as_of)
+INFO:sqlalchemy.engine.Engine:[no key 0.00031s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_decisions_entity_id ON decisions (entity_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00025s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE edges (
+	edge_id VARCHAR(256) NOT NULL, 
+	source_id VARCHAR(128) NOT NULL, 
+	target_id VARCHAR(128) NOT NULL, 
+	relation VARCHAR(32) NOT NULL, 
+	layer VARCHAR(16) NOT NULL, 
+	confidence FLOAT NOT NULL, 
+	necessity VARCHAR(16) NOT NULL, 
+	evidence_count INTEGER NOT NULL, 
+	last_observed_at DATETIME, 
+	valid_from DATETIME NOT NULL, 
+	valid_to DATETIME, 
+	created_at DATETIME NOT NULL, 
+	updated_at DATETIME NOT NULL, 
+	PRIMARY KEY (edge_id), 
+	FOREIGN KEY(source_id) REFERENCES entities (entity_id), 
+	FOREIGN KEY(target_id) REFERENCES entities (entity_id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00026s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_edges_layer ON edges (layer)
+INFO:sqlalchemy.engine.Engine:[no key 0.00034s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_edges_target_id ON edges (target_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00033s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_edges_source_id ON edges (source_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00025s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE decision_paths (
+	path_id VARCHAR(36) NOT NULL, 
+	decision_id VARCHAR(36) NOT NULL, 
+	path_nodes JSON NOT NULL, 
+	path_confidence FLOAT NOT NULL, 
+	is_critical_path BOOLEAN NOT NULL, 
+	PRIMARY KEY (path_id), 
+	FOREIGN KEY(decision_id) REFERENCES decisions (decision_id) ON DELETE CASCADE
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00029s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_decision_paths_decision_id ON decision_paths (decision_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00030s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE runbook_executions (
+	execution_id VARCHAR(36) NOT NULL, 
+	decision_id VARCHAR(36) NOT NULL, 
+	stage VARCHAR(64) NOT NULL, 
+	status VARCHAR(32) NOT NULL, 
+	started_at DATETIME, 
+	completed_at DATETIME, 
+	notes TEXT, 
+	PRIMARY KEY (execution_id), 
+	FOREIGN KEY(decision_id) REFERENCES decisions (decision_id) ON DELETE CASCADE
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00027s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_runbook_executions_decision_id ON runbook_executions (decision_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00030s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE edge_channel_evidence (
+	id VARCHAR(36) NOT NULL, 
+	edge_id VARCHAR(256) NOT NULL, 
+	channel VARCHAR(32) NOT NULL, 
+	observation_count INTEGER NOT NULL, 
+	last_observed_at DATETIME, 
+	PRIMARY KEY (id), 
+	CONSTRAINT uq_edge_channel UNIQUE (edge_id, channel), 
+	FOREIGN KEY(edge_id) REFERENCES edges (edge_id) ON DELETE CASCADE
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00025s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_edge_channel_evidence_edge_id ON edge_channel_evidence (edge_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00029s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE edge_versions (
+	version_id VARCHAR(36) NOT NULL, 
+	edge_id VARCHAR(256) NOT NULL, 
+	layer VARCHAR(16) NOT NULL, 
+	confidence FLOAT NOT NULL, 
+	snapshot JSON NOT NULL, 
+	valid_from DATETIME NOT NULL, 
+	valid_to DATETIME, 
+	created_at DATETIME NOT NULL, 
+	PRIMARY KEY (version_id), 
+	FOREIGN KEY(edge_id) REFERENCES edges (edge_id) ON DELETE CASCADE
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00031s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_edge_versions_edge_id ON edge_versions (edge_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00035s] ()
+INFO:sqlalchemy.engine.Engine:COMMIT
+INFO:     Application startup complete.
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [27944]
+INFO:     Started server process [20624]
+INFO:     Waiting for application startup.
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("aliases")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("aliases")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("audit_log")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("audit_log")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("benchmark_runs")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("benchmark_runs")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("benchmark_results")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("benchmark_results")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("calibration_profiles")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("calibration_profiles")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("channel_health")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("channel_health")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("coverage_snapshots")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("coverage_snapshots")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("decisions")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("decisions")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("decision_paths")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("decision_paths")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("runbook_executions")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("runbook_executions")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("edges")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("edges")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("edge_channel_evidence")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("edge_channel_evidence")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("edge_versions")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("edge_versions")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("entities")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("entities")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("evidence_events")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("evidence_events")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("principals")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("principals")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE audit_log (
+	log_id VARCHAR(36) NOT NULL, 
+	principal_id VARCHAR(128), 
+	action VARCHAR(64) NOT NULL, 
+	resource_type VARCHAR(64) NOT NULL, 
+	resource_id VARCHAR(128), 
+	details JSON NOT NULL, 
+	ip_address VARCHAR(64), 
+	created_at DATETIME NOT NULL, 
+	PRIMARY KEY (log_id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00027s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_audit_log_principal_id ON audit_log (principal_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00024s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_audit_log_created_at ON audit_log (created_at)
+INFO:sqlalchemy.engine.Engine:[no key 0.00026s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_audit_log_action ON audit_log (action)
+INFO:sqlalchemy.engine.Engine:[no key 0.00054s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE benchmark_runs (
+	run_id VARCHAR(36) NOT NULL, 
+	status VARCHAR(32) NOT NULL, 
+	config JSON NOT NULL, 
+	started_at DATETIME, 
+	completed_at DATETIME, 
+	error_message TEXT, 
+	created_at DATETIME NOT NULL, 
+	PRIMARY KEY (run_id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00031s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_benchmark_runs_status ON benchmark_runs (status)
+INFO:sqlalchemy.engine.Engine:[no key 0.00034s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE calibration_profiles (
+	profile_id VARCHAR(36) NOT NULL, 
+	name VARCHAR(128) NOT NULL, 
+	theta_c FLOAT NOT NULL, 
+	theta_p FLOAT NOT NULL, 
+	c_min FLOAT NOT NULL, 
+	is_active BOOLEAN NOT NULL, 
+	created_at DATETIME NOT NULL, 
+	updated_at DATETIME NOT NULL, 
+	PRIMARY KEY (profile_id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00027s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE channel_health (
+	channel VARCHAR(32) NOT NULL, 
+	health_score FLOAT NOT NULL, 
+	lag_seconds FLOAT NOT NULL, 
+	last_checked_at DATETIME NOT NULL, 
+	details VARCHAR(512), 
+	PRIMARY KEY (channel)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00030s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE coverage_snapshots (
+	snapshot_id VARCHAR(36) NOT NULL, 
+	coverage FLOAT NOT NULL, 
+	observed_entities INTEGER NOT NULL, 
+	total_entities INTEGER NOT NULL, 
+	suppressed_channels JSON NOT NULL, 
+	scope VARCHAR(128), 
+	captured_at DATETIME NOT NULL, 
+	PRIMARY KEY (snapshot_id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00031s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_coverage_snapshots_captured_at ON coverage_snapshots (captured_at)
+INFO:sqlalchemy.engine.Engine:[no key 0.00030s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE entities (
+	entity_id VARCHAR(128) NOT NULL, 
+	entity_type VARCHAR(32) NOT NULL, 
+	name VARCHAR(512) NOT NULL, 
+	criticality VARCHAR(16) NOT NULL, 
+	metadata JSON NOT NULL, 
+	created_at DATETIME NOT NULL, 
+	updated_at DATETIME NOT NULL, 
+	PRIMARY KEY (entity_id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00025s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_entities_entity_type ON entities (entity_type)
+INFO:sqlalchemy.engine.Engine:[no key 0.00030s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE evidence_events (
+	event_id VARCHAR(128) NOT NULL, 
+	idempotency_key VARCHAR(256), 
+	source_id VARCHAR(128) NOT NULL, 
+	target_id VARCHAR(128) NOT NULL, 
+	relation VARCHAR(32) NOT NULL, 
+	channel VARCHAR(32) NOT NULL, 
+	source_type VARCHAR(32), 
+	target_type VARCHAR(32), 
+	payload_hash VARCHAR(128), 
+	observed_at DATETIME NOT NULL, 
+	ingested_at DATETIME NOT NULL, 
+	PRIMARY KEY (event_id), 
+	CONSTRAINT uq_evidence_idempotency UNIQUE (idempotency_key)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00031s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_evidence_events_target_id ON evidence_events (target_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00029s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_evidence_events_idempotency_key ON evidence_events (idempotency_key)
+INFO:sqlalchemy.engine.Engine:[no key 0.00025s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_evidence_events_source_id ON evidence_events (source_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00024s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_evidence_events_observed_at ON evidence_events (observed_at)
+INFO:sqlalchemy.engine.Engine:[no key 0.00028s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_evidence_events_channel ON evidence_events (channel)
+INFO:sqlalchemy.engine.Engine:[no key 0.00028s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE principals (
+	principal_id VARCHAR(128) NOT NULL, 
+	subject VARCHAR(256) NOT NULL, 
+	roles JSON NOT NULL, 
+	api_key_hash VARCHAR(256), 
+	is_active BOOLEAN NOT NULL, 
+	created_at DATETIME NOT NULL, 
+	updated_at DATETIME NOT NULL, 
+	PRIMARY KEY (principal_id), 
+	UNIQUE (subject)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00033s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE aliases (
+	alias_id VARCHAR(36) NOT NULL, 
+	entity_id VARCHAR(128) NOT NULL, 
+	alias VARCHAR(512) NOT NULL, 
+	source VARCHAR(64), 
+	created_at DATETIME NOT NULL, 
+	PRIMARY KEY (alias_id), 
+	CONSTRAINT uq_alias_entity_alias UNIQUE (entity_id, alias), 
+	FOREIGN KEY(entity_id) REFERENCES entities (entity_id) ON DELETE CASCADE
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00038s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_aliases_entity_id ON aliases (entity_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00031s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_aliases_alias ON aliases (alias)
+INFO:sqlalchemy.engine.Engine:[no key 0.00030s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE benchmark_results (
+	result_id VARCHAR(36) NOT NULL, 
+	run_id VARCHAR(36) NOT NULL, 
+	loss FLOAT NOT NULL, 
+	method VARCHAR(32) NOT NULL, 
+	metrics JSON NOT NULL, 
+	data_class VARCHAR(64) NOT NULL, 
+	created_at DATETIME NOT NULL, 
+	PRIMARY KEY (result_id), 
+	FOREIGN KEY(run_id) REFERENCES benchmark_runs (run_id) ON DELETE CASCADE
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00026s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_benchmark_results_run_id ON benchmark_results (run_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00025s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE decisions (
+	decision_id VARCHAR(36) NOT NULL, 
+	entity_id VARCHAR(128) NOT NULL, 
+	verdict VARCHAR(16) NOT NULL, 
+	coverage FLOAT NOT NULL, 
+	truncated BOOLEAN NOT NULL, 
+	reason_codes JSON NOT NULL, 
+	rationale JSON NOT NULL, 
+	as_of DATETIME NOT NULL, 
+	engine_version VARCHAR(16) NOT NULL, 
+	change_type VARCHAR(64), 
+	supersedes_id VARCHAR(36), 
+	superseded_by_id VARCHAR(36), 
+	created_at DATETIME NOT NULL, 
+	created_by VARCHAR(128), 
+	PRIMARY KEY (decision_id), 
+	FOREIGN KEY(entity_id) REFERENCES entities (entity_id), 
+	FOREIGN KEY(supersedes_id) REFERENCES decisions (decision_id), 
+	FOREIGN KEY(superseded_by_id) REFERENCES decisions (decision_id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00035s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_decisions_as_of ON decisions (as_of)
+INFO:sqlalchemy.engine.Engine:[no key 0.00029s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_decisions_verdict ON decisions (verdict)
+INFO:sqlalchemy.engine.Engine:[no key 0.00031s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_decisions_entity_id ON decisions (entity_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00025s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE edges (
+	edge_id VARCHAR(256) NOT NULL, 
+	source_id VARCHAR(128) NOT NULL, 
+	target_id VARCHAR(128) NOT NULL, 
+	relation VARCHAR(32) NOT NULL, 
+	layer VARCHAR(16) NOT NULL, 
+	confidence FLOAT NOT NULL, 
+	necessity VARCHAR(16) NOT NULL, 
+	evidence_count INTEGER NOT NULL, 
+	last_observed_at DATETIME, 
+	valid_from DATETIME NOT NULL, 
+	valid_to DATETIME, 
+	created_at DATETIME NOT NULL, 
+	updated_at DATETIME NOT NULL, 
+	PRIMARY KEY (edge_id), 
+	FOREIGN KEY(source_id) REFERENCES entities (entity_id), 
+	FOREIGN KEY(target_id) REFERENCES entities (entity_id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00026s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_edges_layer ON edges (layer)
+INFO:sqlalchemy.engine.Engine:[no key 0.00034s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_edges_target_id ON edges (target_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00030s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_edges_source_id ON edges (source_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00028s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE decision_paths (
+	path_id VARCHAR(36) NOT NULL, 
+	decision_id VARCHAR(36) NOT NULL, 
+	path_nodes JSON NOT NULL, 
+	path_confidence FLOAT NOT NULL, 
+	is_critical_path BOOLEAN NOT NULL, 
+	PRIMARY KEY (path_id), 
+	FOREIGN KEY(decision_id) REFERENCES decisions (decision_id) ON DELETE CASCADE
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00028s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_decision_paths_decision_id ON decision_paths (decision_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00024s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE runbook_executions (
+	execution_id VARCHAR(36) NOT NULL, 
+	decision_id VARCHAR(36) NOT NULL, 
+	stage VARCHAR(64) NOT NULL, 
+	status VARCHAR(32) NOT NULL, 
+	started_at DATETIME, 
+	completed_at DATETIME, 
+	notes TEXT, 
+	PRIMARY KEY (execution_id), 
+	FOREIGN KEY(decision_id) REFERENCES decisions (decision_id) ON DELETE CASCADE
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00030s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_runbook_executions_decision_id ON runbook_executions (decision_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00036s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE edge_channel_evidence (
+	id VARCHAR(36) NOT NULL, 
+	edge_id VARCHAR(256) NOT NULL, 
+	channel VARCHAR(32) NOT NULL, 
+	observation_count INTEGER NOT NULL, 
+	last_observed_at DATETIME, 
+	PRIMARY KEY (id), 
+	CONSTRAINT uq_edge_channel UNIQUE (edge_id, channel), 
+	FOREIGN KEY(edge_id) REFERENCES edges (edge_id) ON DELETE CASCADE
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00027s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_edge_channel_evidence_edge_id ON edge_channel_evidence (edge_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00031s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE edge_versions (
+	version_id VARCHAR(36) NOT NULL, 
+	edge_id VARCHAR(256) NOT NULL, 
+	layer VARCHAR(16) NOT NULL, 
+	confidence FLOAT NOT NULL, 
+	snapshot JSON NOT NULL, 
+	valid_from DATETIME NOT NULL, 
+	valid_to DATETIME, 
+	created_at DATETIME NOT NULL, 
+	PRIMARY KEY (version_id), 
+	FOREIGN KEY(edge_id) REFERENCES edges (edge_id) ON DELETE CASCADE
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00029s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_edge_versions_edge_id ON edge_versions (edge_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00027s] ()
+INFO:sqlalchemy.engine.Engine:COMMIT
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'src\cirda_api\settings.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [20624]
+WARNING:  WatchFiles detected changes in 'src\cirda_api\services\coverage_service.py', 'src\cirda_api\services\policy.py', 'src\cirda_api\api\v1\schemas\decisions.py', 'src\cirda_api\memory\store.py', 'tests\integration\test_decision_flow.py', 'src\cirda_api\api\v1\routes\decisions.py', 'src\cirda_api\services\decision_service.py', 'src\cirda_api\db\repositories\coverage.py'. Reloading...
+INFO:     Started server process [39392]
+INFO:     Waiting for application startup.
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("aliases")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("aliases")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("audit_log")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("audit_log")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("benchmark_runs")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("benchmark_runs")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("benchmark_results")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("benchmark_results")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("calibration_profiles")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("calibration_profiles")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("channel_health")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("channel_health")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("coverage_snapshots")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("coverage_snapshots")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("decisions")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("decisions")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("decision_paths")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("decision_paths")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("runbook_executions")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("runbook_executions")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("edges")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("edges")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("edge_channel_evidence")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("edge_channel_evidence")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("edge_versions")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("edge_versions")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("entities")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("entities")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("evidence_events")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("evidence_events")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("principals")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("principals")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE audit_log (
+	log_id VARCHAR(36) NOT NULL, 
+	principal_id VARCHAR(128), 
+	action VARCHAR(64) NOT NULL, 
+	resource_type VARCHAR(64) NOT NULL, 
+	resource_id VARCHAR(128), 
+	details JSON NOT NULL, 
+	ip_address VARCHAR(64), 
+	created_at DATETIME NOT NULL, 
+	PRIMARY KEY (log_id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00030s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_audit_log_principal_id ON audit_log (principal_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00032s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_audit_log_created_at ON audit_log (created_at)
+INFO:sqlalchemy.engine.Engine:[no key 0.00036s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_audit_log_action ON audit_log (action)
+INFO:sqlalchemy.engine.Engine:[no key 0.00028s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE benchmark_runs (
+	run_id VARCHAR(36) NOT NULL, 
+	status VARCHAR(32) NOT NULL, 
+	config JSON NOT NULL, 
+	started_at DATETIME, 
+	completed_at DATETIME, 
+	error_message TEXT, 
+	created_at DATETIME NOT NULL, 
+	PRIMARY KEY (run_id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00029s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_benchmark_runs_status ON benchmark_runs (status)
+INFO:sqlalchemy.engine.Engine:[no key 0.00030s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE calibration_profiles (
+	profile_id VARCHAR(36) NOT NULL, 
+	name VARCHAR(128) NOT NULL, 
+	theta_c FLOAT NOT NULL, 
+	theta_p FLOAT NOT NULL, 
+	c_min FLOAT NOT NULL, 
+	is_active BOOLEAN NOT NULL, 
+	created_at DATETIME NOT NULL, 
+	updated_at DATETIME NOT NULL, 
+	PRIMARY KEY (profile_id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00028s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE channel_health (
+	channel VARCHAR(32) NOT NULL, 
+	health_score FLOAT NOT NULL, 
+	lag_seconds FLOAT NOT NULL, 
+	last_checked_at DATETIME NOT NULL, 
+	details VARCHAR(512), 
+	PRIMARY KEY (channel)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00031s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE coverage_snapshots (
+	snapshot_id VARCHAR(36) NOT NULL, 
+	coverage FLOAT NOT NULL, 
+	observed_entities INTEGER NOT NULL, 
+	total_entities INTEGER NOT NULL, 
+	suppressed_channels JSON NOT NULL, 
+	scope VARCHAR(128), 
+	captured_at DATETIME NOT NULL, 
+	PRIMARY KEY (snapshot_id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00034s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_coverage_snapshots_captured_at ON coverage_snapshots (captured_at)
+INFO:sqlalchemy.engine.Engine:[no key 0.00030s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE entities (
+	entity_id VARCHAR(128) NOT NULL, 
+	entity_type VARCHAR(32) NOT NULL, 
+	name VARCHAR(512) NOT NULL, 
+	criticality VARCHAR(16) NOT NULL, 
+	metadata JSON NOT NULL, 
+	created_at DATETIME NOT NULL, 
+	updated_at DATETIME NOT NULL, 
+	PRIMARY KEY (entity_id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00030s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_entities_entity_type ON entities (entity_type)
+INFO:sqlalchemy.engine.Engine:[no key 0.00031s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE evidence_events (
+	event_id VARCHAR(128) NOT NULL, 
+	idempotency_key VARCHAR(256), 
+	source_id VARCHAR(128) NOT NULL, 
+	target_id VARCHAR(128) NOT NULL, 
+	relation VARCHAR(32) NOT NULL, 
+	channel VARCHAR(32) NOT NULL, 
+	source_type VARCHAR(32), 
+	target_type VARCHAR(32), 
+	payload_hash VARCHAR(128), 
+	observed_at DATETIME NOT NULL, 
+	ingested_at DATETIME NOT NULL, 
+	PRIMARY KEY (event_id), 
+	CONSTRAINT uq_evidence_idempotency UNIQUE (idempotency_key)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00027s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_evidence_events_target_id ON evidence_events (target_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00033s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_evidence_events_idempotency_key ON evidence_events (idempotency_key)
+INFO:sqlalchemy.engine.Engine:[no key 0.00029s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_evidence_events_source_id ON evidence_events (source_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00027s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_evidence_events_observed_at ON evidence_events (observed_at)
+INFO:sqlalchemy.engine.Engine:[no key 0.00031s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_evidence_events_channel ON evidence_events (channel)
+INFO:sqlalchemy.engine.Engine:[no key 0.00029s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE principals (
+	principal_id VARCHAR(128) NOT NULL, 
+	subject VARCHAR(256) NOT NULL, 
+	roles JSON NOT NULL, 
+	api_key_hash VARCHAR(256), 
+	is_active BOOLEAN NOT NULL, 
+	created_at DATETIME NOT NULL, 
+	updated_at DATETIME NOT NULL, 
+	PRIMARY KEY (principal_id), 
+	UNIQUE (subject)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00028s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE aliases (
+	alias_id VARCHAR(36) NOT NULL, 
+	entity_id VARCHAR(128) NOT NULL, 
+	alias VARCHAR(512) NOT NULL, 
+	source VARCHAR(64), 
+	created_at DATETIME NOT NULL, 
+	PRIMARY KEY (alias_id), 
+	CONSTRAINT uq_alias_entity_alias UNIQUE (entity_id, alias), 
+	FOREIGN KEY(entity_id) REFERENCES entities (entity_id) ON DELETE CASCADE
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00028s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_aliases_entity_id ON aliases (entity_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00027s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_aliases_alias ON aliases (alias)
+INFO:sqlalchemy.engine.Engine:[no key 0.00029s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE benchmark_results (
+	result_id VARCHAR(36) NOT NULL, 
+	run_id VARCHAR(36) NOT NULL, 
+	loss FLOAT NOT NULL, 
+	method VARCHAR(32) NOT NULL, 
+	metrics JSON NOT NULL, 
+	data_class VARCHAR(64) NOT NULL, 
+	created_at DATETIME NOT NULL, 
+	PRIMARY KEY (result_id), 
+	FOREIGN KEY(run_id) REFERENCES benchmark_runs (run_id) ON DELETE CASCADE
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00028s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_benchmark_results_run_id ON benchmark_results (run_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00032s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE decisions (
+	decision_id VARCHAR(36) NOT NULL, 
+	entity_id VARCHAR(128) NOT NULL, 
+	verdict VARCHAR(16) NOT NULL, 
+	coverage FLOAT NOT NULL, 
+	truncated BOOLEAN NOT NULL, 
+	reason_codes JSON NOT NULL, 
+	rationale JSON NOT NULL, 
+	as_of DATETIME NOT NULL, 
+	engine_version VARCHAR(16) NOT NULL, 
+	change_type VARCHAR(64), 
+	supersedes_id VARCHAR(36), 
+	superseded_by_id VARCHAR(36), 
+	created_at DATETIME NOT NULL, 
+	created_by VARCHAR(128), 
+	PRIMARY KEY (decision_id), 
+	FOREIGN KEY(entity_id) REFERENCES entities (entity_id), 
+	FOREIGN KEY(supersedes_id) REFERENCES decisions (decision_id), 
+	FOREIGN KEY(superseded_by_id) REFERENCES decisions (decision_id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00039s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_decisions_verdict ON decisions (verdict)
+INFO:sqlalchemy.engine.Engine:[no key 0.00029s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_decisions_as_of ON decisions (as_of)
+INFO:sqlalchemy.engine.Engine:[no key 0.00028s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_decisions_entity_id ON decisions (entity_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00034s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE edges (
+	edge_id VARCHAR(256) NOT NULL, 
+	source_id VARCHAR(128) NOT NULL, 
+	target_id VARCHAR(128) NOT NULL, 
+	relation VARCHAR(32) NOT NULL, 
+	layer VARCHAR(16) NOT NULL, 
+	confidence FLOAT NOT NULL, 
+	necessity VARCHAR(16) NOT NULL, 
+	evidence_count INTEGER NOT NULL, 
+	last_observed_at DATETIME, 
+	valid_from DATETIME NOT NULL, 
+	valid_to DATETIME, 
+	created_at DATETIME NOT NULL, 
+	updated_at DATETIME NOT NULL, 
+	PRIMARY KEY (edge_id), 
+	FOREIGN KEY(source_id) REFERENCES entities (entity_id), 
+	FOREIGN KEY(target_id) REFERENCES entities (entity_id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00041s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_edges_layer ON edges (layer)
+INFO:sqlalchemy.engine.Engine:[no key 0.00027s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_edges_target_id ON edges (target_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00028s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_edges_source_id ON edges (source_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00033s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE decision_paths (
+	path_id VARCHAR(36) NOT NULL, 
+	decision_id VARCHAR(36) NOT NULL, 
+	path_nodes JSON NOT NULL, 
+	path_confidence FLOAT NOT NULL, 
+	is_critical_path BOOLEAN NOT NULL, 
+	PRIMARY KEY (path_id), 
+	FOREIGN KEY(decision_id) REFERENCES decisions (decision_id) ON DELETE CASCADE
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00031s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_decision_paths_decision_id ON decision_paths (decision_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00031s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE runbook_executions (
+	execution_id VARCHAR(36) NOT NULL, 
+	decision_id VARCHAR(36) NOT NULL, 
+	stage VARCHAR(64) NOT NULL, 
+	status VARCHAR(32) NOT NULL, 
+	started_at DATETIME, 
+	completed_at DATETIME, 
+	notes TEXT, 
+	PRIMARY KEY (execution_id), 
+	FOREIGN KEY(decision_id) REFERENCES decisions (decision_id) ON DELETE CASCADE
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00028s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_runbook_executions_decision_id ON runbook_executions (decision_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00031s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE edge_channel_evidence (
+	id VARCHAR(36) NOT NULL, 
+	edge_id VARCHAR(256) NOT NULL, 
+	channel VARCHAR(32) NOT NULL, 
+	observation_count INTEGER NOT NULL, 
+	last_observed_at DATETIME, 
+	PRIMARY KEY (id), 
+	CONSTRAINT uq_edge_channel UNIQUE (edge_id, channel), 
+	FOREIGN KEY(edge_id) REFERENCES edges (edge_id) ON DELETE CASCADE
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00027s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_edge_channel_evidence_edge_id ON edge_channel_evidence (edge_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00025s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE edge_versions (
+	version_id VARCHAR(36) NOT NULL, 
+	edge_id VARCHAR(256) NOT NULL, 
+	layer VARCHAR(16) NOT NULL, 
+	confidence FLOAT NOT NULL, 
+	snapshot JSON NOT NULL, 
+	valid_from DATETIME NOT NULL, 
+	valid_to DATETIME, 
+	created_at DATETIME NOT NULL, 
+	PRIMARY KEY (version_id), 
+	FOREIGN KEY(edge_id) REFERENCES edges (edge_id) ON DELETE CASCADE
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00034s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_edge_versions_edge_id ON edge_versions (edge_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00031s] ()
+INFO:sqlalchemy.engine.Engine:COMMIT
+INFO:     Application startup complete.
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [39392]
+INFO:     Started server process [11612]
+INFO:     Waiting for application startup.
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("aliases")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("aliases")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("audit_log")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("audit_log")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("benchmark_runs")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("benchmark_runs")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("benchmark_results")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("benchmark_results")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("calibration_profiles")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("calibration_profiles")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("channel_health")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("channel_health")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("coverage_snapshots")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("coverage_snapshots")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("decisions")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("decisions")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("decision_paths")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("decision_paths")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("runbook_executions")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("runbook_executions")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("edges")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("edges")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("edge_channel_evidence")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("edge_channel_evidence")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("edge_versions")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("edge_versions")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("entities")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("entities")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("evidence_events")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("evidence_events")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("principals")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("principals")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE audit_log (
+	log_id VARCHAR(36) NOT NULL, 
+	principal_id VARCHAR(128), 
+	action VARCHAR(64) NOT NULL, 
+	resource_type VARCHAR(64) NOT NULL, 
+	resource_id VARCHAR(128), 
+	details JSON NOT NULL, 
+	ip_address VARCHAR(64), 
+	created_at DATETIME NOT NULL, 
+	PRIMARY KEY (log_id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00038s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_audit_log_principal_id ON audit_log (principal_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00032s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_audit_log_created_at ON audit_log (created_at)
+INFO:sqlalchemy.engine.Engine:[no key 0.00029s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_audit_log_action ON audit_log (action)
+INFO:sqlalchemy.engine.Engine:[no key 0.00035s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE benchmark_runs (
+	run_id VARCHAR(36) NOT NULL, 
+	status VARCHAR(32) NOT NULL, 
+	config JSON NOT NULL, 
+	started_at DATETIME, 
+	completed_at DATETIME, 
+	error_message TEXT, 
+	created_at DATETIME NOT NULL, 
+	PRIMARY KEY (run_id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00035s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_benchmark_runs_status ON benchmark_runs (status)
+INFO:sqlalchemy.engine.Engine:[no key 0.00029s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE calibration_profiles (
+	profile_id VARCHAR(36) NOT NULL, 
+	name VARCHAR(128) NOT NULL, 
+	theta_c FLOAT NOT NULL, 
+	theta_p FLOAT NOT NULL, 
+	c_min FLOAT NOT NULL, 
+	is_active BOOLEAN NOT NULL, 
+	created_at DATETIME NOT NULL, 
+	updated_at DATETIME NOT NULL, 
+	PRIMARY KEY (profile_id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00028s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE channel_health (
+	channel VARCHAR(32) NOT NULL, 
+	health_score FLOAT NOT NULL, 
+	lag_seconds FLOAT NOT NULL, 
+	last_checked_at DATETIME NOT NULL, 
+	details VARCHAR(512), 
+	PRIMARY KEY (channel)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00030s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE coverage_snapshots (
+	snapshot_id VARCHAR(36) NOT NULL, 
+	coverage FLOAT NOT NULL, 
+	observed_entities INTEGER NOT NULL, 
+	total_entities INTEGER NOT NULL, 
+	suppressed_channels JSON NOT NULL, 
+	scope VARCHAR(128), 
+	captured_at DATETIME NOT NULL, 
+	PRIMARY KEY (snapshot_id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00034s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_coverage_snapshots_captured_at ON coverage_snapshots (captured_at)
+INFO:sqlalchemy.engine.Engine:[no key 0.00033s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE entities (
+	entity_id VARCHAR(128) NOT NULL, 
+	entity_type VARCHAR(32) NOT NULL, 
+	name VARCHAR(512) NOT NULL, 
+	criticality VARCHAR(16) NOT NULL, 
+	metadata JSON NOT NULL, 
+	created_at DATETIME NOT NULL, 
+	updated_at DATETIME NOT NULL, 
+	PRIMARY KEY (entity_id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00030s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_entities_entity_type ON entities (entity_type)
+INFO:sqlalchemy.engine.Engine:[no key 0.00030s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE evidence_events (
+	event_id VARCHAR(128) NOT NULL, 
+	idempotency_key VARCHAR(256), 
+	source_id VARCHAR(128) NOT NULL, 
+	target_id VARCHAR(128) NOT NULL, 
+	relation VARCHAR(32) NOT NULL, 
+	channel VARCHAR(32) NOT NULL, 
+	source_type VARCHAR(32), 
+	target_type VARCHAR(32), 
+	payload_hash VARCHAR(128), 
+	observed_at DATETIME NOT NULL, 
+	ingested_at DATETIME NOT NULL, 
+	PRIMARY KEY (event_id), 
+	CONSTRAINT uq_evidence_idempotency UNIQUE (idempotency_key)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00037s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_evidence_events_target_id ON evidence_events (target_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00031s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_evidence_events_idempotency_key ON evidence_events (idempotency_key)
+INFO:sqlalchemy.engine.Engine:[no key 0.00035s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_evidence_events_source_id ON evidence_events (source_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00029s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_evidence_events_observed_at ON evidence_events (observed_at)
+INFO:sqlalchemy.engine.Engine:[no key 0.00032s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_evidence_events_channel ON evidence_events (channel)
+INFO:sqlalchemy.engine.Engine:[no key 0.00034s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE principals (
+	principal_id VARCHAR(128) NOT NULL, 
+	subject VARCHAR(256) NOT NULL, 
+	roles JSON NOT NULL, 
+	api_key_hash VARCHAR(256), 
+	is_active BOOLEAN NOT NULL, 
+	created_at DATETIME NOT NULL, 
+	updated_at DATETIME NOT NULL, 
+	PRIMARY KEY (principal_id), 
+	UNIQUE (subject)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00034s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE aliases (
+	alias_id VARCHAR(36) NOT NULL, 
+	entity_id VARCHAR(128) NOT NULL, 
+	alias VARCHAR(512) NOT NULL, 
+	source VARCHAR(64), 
+	created_at DATETIME NOT NULL, 
+	PRIMARY KEY (alias_id), 
+	CONSTRAINT uq_alias_entity_alias UNIQUE (entity_id, alias), 
+	FOREIGN KEY(entity_id) REFERENCES entities (entity_id) ON DELETE CASCADE
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00033s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_aliases_entity_id ON aliases (entity_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00033s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_aliases_alias ON aliases (alias)
+INFO:sqlalchemy.engine.Engine:[no key 0.00028s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE benchmark_results (
+	result_id VARCHAR(36) NOT NULL, 
+	run_id VARCHAR(36) NOT NULL, 
+	loss FLOAT NOT NULL, 
+	method VARCHAR(32) NOT NULL, 
+	metrics JSON NOT NULL, 
+	data_class VARCHAR(64) NOT NULL, 
+	created_at DATETIME NOT NULL, 
+	PRIMARY KEY (result_id), 
+	FOREIGN KEY(run_id) REFERENCES benchmark_runs (run_id) ON DELETE CASCADE
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00029s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_benchmark_results_run_id ON benchmark_results (run_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00028s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE decisions (
+	decision_id VARCHAR(36) NOT NULL, 
+	entity_id VARCHAR(128) NOT NULL, 
+	verdict VARCHAR(16) NOT NULL, 
+	coverage FLOAT NOT NULL, 
+	truncated BOOLEAN NOT NULL, 
+	reason_codes JSON NOT NULL, 
+	rationale JSON NOT NULL, 
+	as_of DATETIME NOT NULL, 
+	engine_version VARCHAR(16) NOT NULL, 
+	change_type VARCHAR(64), 
+	supersedes_id VARCHAR(36), 
+	superseded_by_id VARCHAR(36), 
+	created_at DATETIME NOT NULL, 
+	created_by VARCHAR(128), 
+	PRIMARY KEY (decision_id), 
+	FOREIGN KEY(entity_id) REFERENCES entities (entity_id), 
+	FOREIGN KEY(supersedes_id) REFERENCES decisions (decision_id), 
+	FOREIGN KEY(superseded_by_id) REFERENCES decisions (decision_id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00031s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_decisions_verdict ON decisions (verdict)
+INFO:sqlalchemy.engine.Engine:[no key 0.00033s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_decisions_as_of ON decisions (as_of)
+INFO:sqlalchemy.engine.Engine:[no key 0.00033s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_decisions_entity_id ON decisions (entity_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00027s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE edges (
+	edge_id VARCHAR(256) NOT NULL, 
+	source_id VARCHAR(128) NOT NULL, 
+	target_id VARCHAR(128) NOT NULL, 
+	relation VARCHAR(32) NOT NULL, 
+	layer VARCHAR(16) NOT NULL, 
+	confidence FLOAT NOT NULL, 
+	necessity VARCHAR(16) NOT NULL, 
+	evidence_count INTEGER NOT NULL, 
+	last_observed_at DATETIME, 
+	valid_from DATETIME NOT NULL, 
+	valid_to DATETIME, 
+	created_at DATETIME NOT NULL, 
+	updated_at DATETIME NOT NULL, 
+	PRIMARY KEY (edge_id), 
+	FOREIGN KEY(source_id) REFERENCES entities (entity_id), 
+	FOREIGN KEY(target_id) REFERENCES entities (entity_id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00046s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_edges_layer ON edges (layer)
+INFO:sqlalchemy.engine.Engine:[no key 0.00031s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_edges_target_id ON edges (target_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00029s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_edges_source_id ON edges (source_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00032s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE decision_paths (
+	path_id VARCHAR(36) NOT NULL, 
+	decision_id VARCHAR(36) NOT NULL, 
+	path_nodes JSON NOT NULL, 
+	path_confidence FLOAT NOT NULL, 
+	is_critical_path BOOLEAN NOT NULL, 
+	PRIMARY KEY (path_id), 
+	FOREIGN KEY(decision_id) REFERENCES decisions (decision_id) ON DELETE CASCADE
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00035s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_decision_paths_decision_id ON decision_paths (decision_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00033s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE runbook_executions (
+	execution_id VARCHAR(36) NOT NULL, 
+	decision_id VARCHAR(36) NOT NULL, 
+	stage VARCHAR(64) NOT NULL, 
+	status VARCHAR(32) NOT NULL, 
+	started_at DATETIME, 
+	completed_at DATETIME, 
+	notes TEXT, 
+	PRIMARY KEY (execution_id), 
+	FOREIGN KEY(decision_id) REFERENCES decisions (decision_id) ON DELETE CASCADE
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00034s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_runbook_executions_decision_id ON runbook_executions (decision_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00036s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE edge_channel_evidence (
+	id VARCHAR(36) NOT NULL, 
+	edge_id VARCHAR(256) NOT NULL, 
+	channel VARCHAR(32) NOT NULL, 
+	observation_count INTEGER NOT NULL, 
+	last_observed_at DATETIME, 
+	PRIMARY KEY (id), 
+	CONSTRAINT uq_edge_channel UNIQUE (edge_id, channel), 
+	FOREIGN KEY(edge_id) REFERENCES edges (edge_id) ON DELETE CASCADE
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00032s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_edge_channel_evidence_edge_id ON edge_channel_evidence (edge_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00030s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE edge_versions (
+	version_id VARCHAR(36) NOT NULL, 
+	edge_id VARCHAR(256) NOT NULL, 
+	layer VARCHAR(16) NOT NULL, 
+	confidence FLOAT NOT NULL, 
+	snapshot JSON NOT NULL, 
+	valid_from DATETIME NOT NULL, 
+	valid_to DATETIME, 
+	created_at DATETIME NOT NULL, 
+	PRIMARY KEY (version_id), 
+	FOREIGN KEY(edge_id) REFERENCES edges (edge_id) ON DELETE CASCADE
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00033s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_edge_versions_edge_id ON edge_versions (edge_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00028s] ()
+INFO:sqlalchemy.engine.Engine:COMMIT
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'src\cirda_api\memory\store.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [11612]
+WARNING:  WatchFiles detected changes in 'tests\integration\test_edge_necessity.py', 'src\cirda_api\db\repositories\edge.py', 'src\cirda_api\services\edge_service.py', 'src\cirda_api\api\v1\routes\edges.py'. Reloading...
+INFO:     Started server process [10768]
+INFO:     Waiting for application startup.
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("aliases")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("aliases")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("audit_log")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("audit_log")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("benchmark_runs")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("benchmark_runs")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("benchmark_results")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("benchmark_results")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("calibration_profiles")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("calibration_profiles")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("channel_health")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("channel_health")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("coverage_snapshots")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("coverage_snapshots")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("decisions")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("decisions")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("decision_paths")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("decision_paths")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("runbook_executions")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("runbook_executions")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("edges")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("edges")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("edge_channel_evidence")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("edge_channel_evidence")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("edge_versions")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("edge_versions")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("entities")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("entities")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("evidence_events")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("evidence_events")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("principals")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("principals")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE audit_log (
+	log_id VARCHAR(36) NOT NULL, 
+	principal_id VARCHAR(128), 
+	action VARCHAR(64) NOT NULL, 
+	resource_type VARCHAR(64) NOT NULL, 
+	resource_id VARCHAR(128), 
+	details JSON NOT NULL, 
+	ip_address VARCHAR(64), 
+	created_at DATETIME NOT NULL, 
+	PRIMARY KEY (log_id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00031s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_audit_log_principal_id ON audit_log (principal_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00032s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_audit_log_created_at ON audit_log (created_at)
+INFO:sqlalchemy.engine.Engine:[no key 0.00030s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_audit_log_action ON audit_log (action)
+INFO:sqlalchemy.engine.Engine:[no key 0.00026s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE benchmark_runs (
+	run_id VARCHAR(36) NOT NULL, 
+	status VARCHAR(32) NOT NULL, 
+	config JSON NOT NULL, 
+	started_at DATETIME, 
+	completed_at DATETIME, 
+	error_message TEXT, 
+	created_at DATETIME NOT NULL, 
+	PRIMARY KEY (run_id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00030s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_benchmark_runs_status ON benchmark_runs (status)
+INFO:sqlalchemy.engine.Engine:[no key 0.00029s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE calibration_profiles (
+	profile_id VARCHAR(36) NOT NULL, 
+	name VARCHAR(128) NOT NULL, 
+	theta_c FLOAT NOT NULL, 
+	theta_p FLOAT NOT NULL, 
+	c_min FLOAT NOT NULL, 
+	is_active BOOLEAN NOT NULL, 
+	created_at DATETIME NOT NULL, 
+	updated_at DATETIME NOT NULL, 
+	PRIMARY KEY (profile_id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00027s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE channel_health (
+	channel VARCHAR(32) NOT NULL, 
+	health_score FLOAT NOT NULL, 
+	lag_seconds FLOAT NOT NULL, 
+	last_checked_at DATETIME NOT NULL, 
+	details VARCHAR(512), 
+	PRIMARY KEY (channel)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00031s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE coverage_snapshots (
+	snapshot_id VARCHAR(36) NOT NULL, 
+	coverage FLOAT NOT NULL, 
+	observed_entities INTEGER NOT NULL, 
+	total_entities INTEGER NOT NULL, 
+	suppressed_channels JSON NOT NULL, 
+	scope VARCHAR(128), 
+	captured_at DATETIME NOT NULL, 
+	PRIMARY KEY (snapshot_id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00027s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_coverage_snapshots_captured_at ON coverage_snapshots (captured_at)
+INFO:sqlalchemy.engine.Engine:[no key 0.00026s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE entities (
+	entity_id VARCHAR(128) NOT NULL, 
+	entity_type VARCHAR(32) NOT NULL, 
+	name VARCHAR(512) NOT NULL, 
+	criticality VARCHAR(16) NOT NULL, 
+	metadata JSON NOT NULL, 
+	created_at DATETIME NOT NULL, 
+	updated_at DATETIME NOT NULL, 
+	PRIMARY KEY (entity_id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00034s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_entities_entity_type ON entities (entity_type)
+INFO:sqlalchemy.engine.Engine:[no key 0.00035s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE evidence_events (
+	event_id VARCHAR(128) NOT NULL, 
+	idempotency_key VARCHAR(256), 
+	source_id VARCHAR(128) NOT NULL, 
+	target_id VARCHAR(128) NOT NULL, 
+	relation VARCHAR(32) NOT NULL, 
+	channel VARCHAR(32) NOT NULL, 
+	source_type VARCHAR(32), 
+	target_type VARCHAR(32), 
+	payload_hash VARCHAR(128), 
+	observed_at DATETIME NOT NULL, 
+	ingested_at DATETIME NOT NULL, 
+	PRIMARY KEY (event_id), 
+	CONSTRAINT uq_evidence_idempotency UNIQUE (idempotency_key)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00033s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_evidence_events_target_id ON evidence_events (target_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00025s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_evidence_events_idempotency_key ON evidence_events (idempotency_key)
+INFO:sqlalchemy.engine.Engine:[no key 0.00023s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_evidence_events_source_id ON evidence_events (source_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00040s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_evidence_events_observed_at ON evidence_events (observed_at)
+INFO:sqlalchemy.engine.Engine:[no key 0.00030s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_evidence_events_channel ON evidence_events (channel)
+INFO:sqlalchemy.engine.Engine:[no key 0.00027s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE principals (
+	principal_id VARCHAR(128) NOT NULL, 
+	subject VARCHAR(256) NOT NULL, 
+	roles JSON NOT NULL, 
+	api_key_hash VARCHAR(256), 
+	is_active BOOLEAN NOT NULL, 
+	created_at DATETIME NOT NULL, 
+	updated_at DATETIME NOT NULL, 
+	PRIMARY KEY (principal_id), 
+	UNIQUE (subject)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00026s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE aliases (
+	alias_id VARCHAR(36) NOT NULL, 
+	entity_id VARCHAR(128) NOT NULL, 
+	alias VARCHAR(512) NOT NULL, 
+	source VARCHAR(64), 
+	created_at DATETIME NOT NULL, 
+	PRIMARY KEY (alias_id), 
+	CONSTRAINT uq_alias_entity_alias UNIQUE (entity_id, alias), 
+	FOREIGN KEY(entity_id) REFERENCES entities (entity_id) ON DELETE CASCADE
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00035s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_aliases_entity_id ON aliases (entity_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00042s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_aliases_alias ON aliases (alias)
+INFO:sqlalchemy.engine.Engine:[no key 0.00030s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE benchmark_results (
+	result_id VARCHAR(36) NOT NULL, 
+	run_id VARCHAR(36) NOT NULL, 
+	loss FLOAT NOT NULL, 
+	method VARCHAR(32) NOT NULL, 
+	metrics JSON NOT NULL, 
+	data_class VARCHAR(64) NOT NULL, 
+	created_at DATETIME NOT NULL, 
+	PRIMARY KEY (result_id), 
+	FOREIGN KEY(run_id) REFERENCES benchmark_runs (run_id) ON DELETE CASCADE
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00039s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_benchmark_results_run_id ON benchmark_results (run_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00031s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE decisions (
+	decision_id VARCHAR(36) NOT NULL, 
+	entity_id VARCHAR(128) NOT NULL, 
+	verdict VARCHAR(16) NOT NULL, 
+	coverage FLOAT NOT NULL, 
+	truncated BOOLEAN NOT NULL, 
+	reason_codes JSON NOT NULL, 
+	rationale JSON NOT NULL, 
+	as_of DATETIME NOT NULL, 
+	engine_version VARCHAR(16) NOT NULL, 
+	change_type VARCHAR(64), 
+	supersedes_id VARCHAR(36), 
+	superseded_by_id VARCHAR(36), 
+	created_at DATETIME NOT NULL, 
+	created_by VARCHAR(128), 
+	PRIMARY KEY (decision_id), 
+	FOREIGN KEY(entity_id) REFERENCES entities (entity_id), 
+	FOREIGN KEY(supersedes_id) REFERENCES decisions (decision_id), 
+	FOREIGN KEY(superseded_by_id) REFERENCES decisions (decision_id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00033s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_decisions_verdict ON decisions (verdict)
+INFO:sqlalchemy.engine.Engine:[no key 0.00030s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_decisions_as_of ON decisions (as_of)
+INFO:sqlalchemy.engine.Engine:[no key 0.00025s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_decisions_entity_id ON decisions (entity_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00027s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE edges (
+	edge_id VARCHAR(256) NOT NULL, 
+	source_id VARCHAR(128) NOT NULL, 
+	target_id VARCHAR(128) NOT NULL, 
+	relation VARCHAR(32) NOT NULL, 
+	layer VARCHAR(16) NOT NULL, 
+	confidence FLOAT NOT NULL, 
+	necessity VARCHAR(16) NOT NULL, 
+	evidence_count INTEGER NOT NULL, 
+	last_observed_at DATETIME, 
+	valid_from DATETIME NOT NULL, 
+	valid_to DATETIME, 
+	created_at DATETIME NOT NULL, 
+	updated_at DATETIME NOT NULL, 
+	PRIMARY KEY (edge_id), 
+	FOREIGN KEY(source_id) REFERENCES entities (entity_id), 
+	FOREIGN KEY(target_id) REFERENCES entities (entity_id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00026s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_edges_layer ON edges (layer)
+INFO:sqlalchemy.engine.Engine:[no key 0.00027s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_edges_target_id ON edges (target_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00030s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_edges_source_id ON edges (source_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00027s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE decision_paths (
+	path_id VARCHAR(36) NOT NULL, 
+	decision_id VARCHAR(36) NOT NULL, 
+	path_nodes JSON NOT NULL, 
+	path_confidence FLOAT NOT NULL, 
+	is_critical_path BOOLEAN NOT NULL, 
+	PRIMARY KEY (path_id), 
+	FOREIGN KEY(decision_id) REFERENCES decisions (decision_id) ON DELETE CASCADE
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00032s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_decision_paths_decision_id ON decision_paths (decision_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00029s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE runbook_executions (
+	execution_id VARCHAR(36) NOT NULL, 
+	decision_id VARCHAR(36) NOT NULL, 
+	stage VARCHAR(64) NOT NULL, 
+	status VARCHAR(32) NOT NULL, 
+	started_at DATETIME, 
+	completed_at DATETIME, 
+	notes TEXT, 
+	PRIMARY KEY (execution_id), 
+	FOREIGN KEY(decision_id) REFERENCES decisions (decision_id) ON DELETE CASCADE
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00029s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_runbook_executions_decision_id ON runbook_executions (decision_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00031s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE edge_channel_evidence (
+	id VARCHAR(36) NOT NULL, 
+	edge_id VARCHAR(256) NOT NULL, 
+	channel VARCHAR(32) NOT NULL, 
+	observation_count INTEGER NOT NULL, 
+	last_observed_at DATETIME, 
+	PRIMARY KEY (id), 
+	CONSTRAINT uq_edge_channel UNIQUE (edge_id, channel), 
+	FOREIGN KEY(edge_id) REFERENCES edges (edge_id) ON DELETE CASCADE
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00029s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_edge_channel_evidence_edge_id ON edge_channel_evidence (edge_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00029s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE edge_versions (
+	version_id VARCHAR(36) NOT NULL, 
+	edge_id VARCHAR(256) NOT NULL, 
+	layer VARCHAR(16) NOT NULL, 
+	confidence FLOAT NOT NULL, 
+	snapshot JSON NOT NULL, 
+	valid_from DATETIME NOT NULL, 
+	valid_to DATETIME, 
+	created_at DATETIME NOT NULL, 
+	PRIMARY KEY (version_id), 
+	FOREIGN KEY(edge_id) REFERENCES edges (edge_id) ON DELETE CASCADE
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00028s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_edge_versions_edge_id ON edge_versions (edge_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00032s] ()
+INFO:sqlalchemy.engine.Engine:COMMIT
+INFO:     Application startup complete.
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [10768]
+INFO:     Started server process [27264]
+INFO:     Waiting for application startup.
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("aliases")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("aliases")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("audit_log")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("audit_log")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("benchmark_runs")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("benchmark_runs")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("benchmark_results")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("benchmark_results")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("calibration_profiles")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("calibration_profiles")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("channel_health")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("channel_health")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("coverage_snapshots")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("coverage_snapshots")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("decisions")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("decisions")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("decision_paths")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("decision_paths")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("runbook_executions")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("runbook_executions")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("edges")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("edges")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("edge_channel_evidence")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("edge_channel_evidence")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("edge_versions")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("edge_versions")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("entities")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("entities")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("evidence_events")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("evidence_events")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("principals")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("principals")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE audit_log (
+	log_id VARCHAR(36) NOT NULL, 
+	principal_id VARCHAR(128), 
+	action VARCHAR(64) NOT NULL, 
+	resource_type VARCHAR(64) NOT NULL, 
+	resource_id VARCHAR(128), 
+	details JSON NOT NULL, 
+	ip_address VARCHAR(64), 
+	created_at DATETIME NOT NULL, 
+	PRIMARY KEY (log_id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00028s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_audit_log_principal_id ON audit_log (principal_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00026s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_audit_log_created_at ON audit_log (created_at)
+INFO:sqlalchemy.engine.Engine:[no key 0.00032s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_audit_log_action ON audit_log (action)
+INFO:sqlalchemy.engine.Engine:[no key 0.00030s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE benchmark_runs (
+	run_id VARCHAR(36) NOT NULL, 
+	status VARCHAR(32) NOT NULL, 
+	config JSON NOT NULL, 
+	started_at DATETIME, 
+	completed_at DATETIME, 
+	error_message TEXT, 
+	created_at DATETIME NOT NULL, 
+	PRIMARY KEY (run_id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00027s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_benchmark_runs_status ON benchmark_runs (status)
+INFO:sqlalchemy.engine.Engine:[no key 0.00032s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE calibration_profiles (
+	profile_id VARCHAR(36) NOT NULL, 
+	name VARCHAR(128) NOT NULL, 
+	theta_c FLOAT NOT NULL, 
+	theta_p FLOAT NOT NULL, 
+	c_min FLOAT NOT NULL, 
+	is_active BOOLEAN NOT NULL, 
+	created_at DATETIME NOT NULL, 
+	updated_at DATETIME NOT NULL, 
+	PRIMARY KEY (profile_id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00031s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE channel_health (
+	channel VARCHAR(32) NOT NULL, 
+	health_score FLOAT NOT NULL, 
+	lag_seconds FLOAT NOT NULL, 
+	last_checked_at DATETIME NOT NULL, 
+	details VARCHAR(512), 
+	PRIMARY KEY (channel)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00032s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE coverage_snapshots (
+	snapshot_id VARCHAR(36) NOT NULL, 
+	coverage FLOAT NOT NULL, 
+	observed_entities INTEGER NOT NULL, 
+	total_entities INTEGER NOT NULL, 
+	suppressed_channels JSON NOT NULL, 
+	scope VARCHAR(128), 
+	captured_at DATETIME NOT NULL, 
+	PRIMARY KEY (snapshot_id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00031s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_coverage_snapshots_captured_at ON coverage_snapshots (captured_at)
+INFO:sqlalchemy.engine.Engine:[no key 0.00030s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE entities (
+	entity_id VARCHAR(128) NOT NULL, 
+	entity_type VARCHAR(32) NOT NULL, 
+	name VARCHAR(512) NOT NULL, 
+	criticality VARCHAR(16) NOT NULL, 
+	metadata JSON NOT NULL, 
+	created_at DATETIME NOT NULL, 
+	updated_at DATETIME NOT NULL, 
+	PRIMARY KEY (entity_id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00034s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_entities_entity_type ON entities (entity_type)
+INFO:sqlalchemy.engine.Engine:[no key 0.00027s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE evidence_events (
+	event_id VARCHAR(128) NOT NULL, 
+	idempotency_key VARCHAR(256), 
+	source_id VARCHAR(128) NOT NULL, 
+	target_id VARCHAR(128) NOT NULL, 
+	relation VARCHAR(32) NOT NULL, 
+	channel VARCHAR(32) NOT NULL, 
+	source_type VARCHAR(32), 
+	target_type VARCHAR(32), 
+	payload_hash VARCHAR(128), 
+	observed_at DATETIME NOT NULL, 
+	ingested_at DATETIME NOT NULL, 
+	PRIMARY KEY (event_id), 
+	CONSTRAINT uq_evidence_idempotency UNIQUE (idempotency_key)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00035s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_evidence_events_target_id ON evidence_events (target_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00025s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_evidence_events_idempotency_key ON evidence_events (idempotency_key)
+INFO:sqlalchemy.engine.Engine:[no key 0.00029s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_evidence_events_source_id ON evidence_events (source_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00029s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_evidence_events_observed_at ON evidence_events (observed_at)
+INFO:sqlalchemy.engine.Engine:[no key 0.00025s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_evidence_events_channel ON evidence_events (channel)
+INFO:sqlalchemy.engine.Engine:[no key 0.00033s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE principals (
+	principal_id VARCHAR(128) NOT NULL, 
+	subject VARCHAR(256) NOT NULL, 
+	roles JSON NOT NULL, 
+	api_key_hash VARCHAR(256), 
+	is_active BOOLEAN NOT NULL, 
+	created_at DATETIME NOT NULL, 
+	updated_at DATETIME NOT NULL, 
+	PRIMARY KEY (principal_id), 
+	UNIQUE (subject)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00029s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE aliases (
+	alias_id VARCHAR(36) NOT NULL, 
+	entity_id VARCHAR(128) NOT NULL, 
+	alias VARCHAR(512) NOT NULL, 
+	source VARCHAR(64), 
+	created_at DATETIME NOT NULL, 
+	PRIMARY KEY (alias_id), 
+	CONSTRAINT uq_alias_entity_alias UNIQUE (entity_id, alias), 
+	FOREIGN KEY(entity_id) REFERENCES entities (entity_id) ON DELETE CASCADE
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00035s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_aliases_entity_id ON aliases (entity_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00027s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_aliases_alias ON aliases (alias)
+INFO:sqlalchemy.engine.Engine:[no key 0.00025s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE benchmark_results (
+	result_id VARCHAR(36) NOT NULL, 
+	run_id VARCHAR(36) NOT NULL, 
+	loss FLOAT NOT NULL, 
+	method VARCHAR(32) NOT NULL, 
+	metrics JSON NOT NULL, 
+	data_class VARCHAR(64) NOT NULL, 
+	created_at DATETIME NOT NULL, 
+	PRIMARY KEY (result_id), 
+	FOREIGN KEY(run_id) REFERENCES benchmark_runs (run_id) ON DELETE CASCADE
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00029s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_benchmark_results_run_id ON benchmark_results (run_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00032s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE decisions (
+	decision_id VARCHAR(36) NOT NULL, 
+	entity_id VARCHAR(128) NOT NULL, 
+	verdict VARCHAR(16) NOT NULL, 
+	coverage FLOAT NOT NULL, 
+	truncated BOOLEAN NOT NULL, 
+	reason_codes JSON NOT NULL, 
+	rationale JSON NOT NULL, 
+	as_of DATETIME NOT NULL, 
+	engine_version VARCHAR(16) NOT NULL, 
+	change_type VARCHAR(64), 
+	supersedes_id VARCHAR(36), 
+	superseded_by_id VARCHAR(36), 
+	created_at DATETIME NOT NULL, 
+	created_by VARCHAR(128), 
+	PRIMARY KEY (decision_id), 
+	FOREIGN KEY(entity_id) REFERENCES entities (entity_id), 
+	FOREIGN KEY(supersedes_id) REFERENCES decisions (decision_id), 
+	FOREIGN KEY(superseded_by_id) REFERENCES decisions (decision_id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00035s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_decisions_as_of ON decisions (as_of)
+INFO:sqlalchemy.engine.Engine:[no key 0.00026s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_decisions_entity_id ON decisions (entity_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00027s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_decisions_verdict ON decisions (verdict)
+INFO:sqlalchemy.engine.Engine:[no key 0.00031s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE edges (
+	edge_id VARCHAR(256) NOT NULL, 
+	source_id VARCHAR(128) NOT NULL, 
+	target_id VARCHAR(128) NOT NULL, 
+	relation VARCHAR(32) NOT NULL, 
+	layer VARCHAR(16) NOT NULL, 
+	confidence FLOAT NOT NULL, 
+	necessity VARCHAR(16) NOT NULL, 
+	evidence_count INTEGER NOT NULL, 
+	last_observed_at DATETIME, 
+	valid_from DATETIME NOT NULL, 
+	valid_to DATETIME, 
+	created_at DATETIME NOT NULL, 
+	updated_at DATETIME NOT NULL, 
+	PRIMARY KEY (edge_id), 
+	FOREIGN KEY(source_id) REFERENCES entities (entity_id), 
+	FOREIGN KEY(target_id) REFERENCES entities (entity_id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00032s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_edges_layer ON edges (layer)
+INFO:sqlalchemy.engine.Engine:[no key 0.00028s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_edges_target_id ON edges (target_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00028s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_edges_source_id ON edges (source_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00027s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE decision_paths (
+	path_id VARCHAR(36) NOT NULL, 
+	decision_id VARCHAR(36) NOT NULL, 
+	path_nodes JSON NOT NULL, 
+	path_confidence FLOAT NOT NULL, 
+	is_critical_path BOOLEAN NOT NULL, 
+	PRIMARY KEY (path_id), 
+	FOREIGN KEY(decision_id) REFERENCES decisions (decision_id) ON DELETE CASCADE
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00029s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_decision_paths_decision_id ON decision_paths (decision_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00032s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE runbook_executions (
+	execution_id VARCHAR(36) NOT NULL, 
+	decision_id VARCHAR(36) NOT NULL, 
+	stage VARCHAR(64) NOT NULL, 
+	status VARCHAR(32) NOT NULL, 
+	started_at DATETIME, 
+	completed_at DATETIME, 
+	notes TEXT, 
+	PRIMARY KEY (execution_id), 
+	FOREIGN KEY(decision_id) REFERENCES decisions (decision_id) ON DELETE CASCADE
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00030s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_runbook_executions_decision_id ON runbook_executions (decision_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00039s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE edge_channel_evidence (
+	id VARCHAR(36) NOT NULL, 
+	edge_id VARCHAR(256) NOT NULL, 
+	channel VARCHAR(32) NOT NULL, 
+	observation_count INTEGER NOT NULL, 
+	last_observed_at DATETIME, 
+	PRIMARY KEY (id), 
+	CONSTRAINT uq_edge_channel UNIQUE (edge_id, channel), 
+	FOREIGN KEY(edge_id) REFERENCES edges (edge_id) ON DELETE CASCADE
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00027s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_edge_channel_evidence_edge_id ON edge_channel_evidence (edge_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00041s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE edge_versions (
+	version_id VARCHAR(36) NOT NULL, 
+	edge_id VARCHAR(256) NOT NULL, 
+	layer VARCHAR(16) NOT NULL, 
+	confidence FLOAT NOT NULL, 
+	snapshot JSON NOT NULL, 
+	valid_from DATETIME NOT NULL, 
+	valid_to DATETIME, 
+	created_at DATETIME NOT NULL, 
+	PRIMARY KEY (version_id), 
+	FOREIGN KEY(edge_id) REFERENCES edges (edge_id) ON DELETE CASCADE
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00034s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_edge_versions_edge_id ON edge_versions (edge_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00032s] ()
+INFO:sqlalchemy.engine.Engine:COMMIT
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'tests\integration\test_edge_necessity.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [27264]
+INFO:     Started server process [31332]
+INFO:     Waiting for application startup.
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("aliases")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("aliases")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("audit_log")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("audit_log")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("benchmark_runs")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("benchmark_runs")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("benchmark_results")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("benchmark_results")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("calibration_profiles")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("calibration_profiles")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("channel_health")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("channel_health")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("coverage_snapshots")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("coverage_snapshots")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("decisions")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("decisions")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("decision_paths")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("decision_paths")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("runbook_executions")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("runbook_executions")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("edges")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("edges")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("edge_channel_evidence")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("edge_channel_evidence")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("edge_versions")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("edge_versions")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("entities")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("entities")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("evidence_events")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("evidence_events")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA main.table_info("principals")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:PRAGMA temp.table_info("principals")
+INFO:sqlalchemy.engine.Engine:[raw sql] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE audit_log (
+	log_id VARCHAR(36) NOT NULL, 
+	principal_id VARCHAR(128), 
+	action VARCHAR(64) NOT NULL, 
+	resource_type VARCHAR(64) NOT NULL, 
+	resource_id VARCHAR(128), 
+	details JSON NOT NULL, 
+	ip_address VARCHAR(64), 
+	created_at DATETIME NOT NULL, 
+	PRIMARY KEY (log_id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00034s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_audit_log_principal_id ON audit_log (principal_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00026s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_audit_log_created_at ON audit_log (created_at)
+INFO:sqlalchemy.engine.Engine:[no key 0.00029s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_audit_log_action ON audit_log (action)
+INFO:sqlalchemy.engine.Engine:[no key 0.00033s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE benchmark_runs (
+	run_id VARCHAR(36) NOT NULL, 
+	status VARCHAR(32) NOT NULL, 
+	config JSON NOT NULL, 
+	started_at DATETIME, 
+	completed_at DATETIME, 
+	error_message TEXT, 
+	created_at DATETIME NOT NULL, 
+	PRIMARY KEY (run_id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00029s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_benchmark_runs_status ON benchmark_runs (status)
+INFO:sqlalchemy.engine.Engine:[no key 0.00061s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE calibration_profiles (
+	profile_id VARCHAR(36) NOT NULL, 
+	name VARCHAR(128) NOT NULL, 
+	theta_c FLOAT NOT NULL, 
+	theta_p FLOAT NOT NULL, 
+	c_min FLOAT NOT NULL, 
+	is_active BOOLEAN NOT NULL, 
+	created_at DATETIME NOT NULL, 
+	updated_at DATETIME NOT NULL, 
+	PRIMARY KEY (profile_id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00035s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE channel_health (
+	channel VARCHAR(32) NOT NULL, 
+	health_score FLOAT NOT NULL, 
+	lag_seconds FLOAT NOT NULL, 
+	last_checked_at DATETIME NOT NULL, 
+	details VARCHAR(512), 
+	PRIMARY KEY (channel)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00032s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE coverage_snapshots (
+	snapshot_id VARCHAR(36) NOT NULL, 
+	coverage FLOAT NOT NULL, 
+	observed_entities INTEGER NOT NULL, 
+	total_entities INTEGER NOT NULL, 
+	suppressed_channels JSON NOT NULL, 
+	scope VARCHAR(128), 
+	captured_at DATETIME NOT NULL, 
+	PRIMARY KEY (snapshot_id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00027s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_coverage_snapshots_captured_at ON coverage_snapshots (captured_at)
+INFO:sqlalchemy.engine.Engine:[no key 0.00030s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE entities (
+	entity_id VARCHAR(128) NOT NULL, 
+	entity_type VARCHAR(32) NOT NULL, 
+	name VARCHAR(512) NOT NULL, 
+	criticality VARCHAR(16) NOT NULL, 
+	metadata JSON NOT NULL, 
+	created_at DATETIME NOT NULL, 
+	updated_at DATETIME NOT NULL, 
+	PRIMARY KEY (entity_id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00026s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_entities_entity_type ON entities (entity_type)
+INFO:sqlalchemy.engine.Engine:[no key 0.00031s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE evidence_events (
+	event_id VARCHAR(128) NOT NULL, 
+	idempotency_key VARCHAR(256), 
+	source_id VARCHAR(128) NOT NULL, 
+	target_id VARCHAR(128) NOT NULL, 
+	relation VARCHAR(32) NOT NULL, 
+	channel VARCHAR(32) NOT NULL, 
+	source_type VARCHAR(32), 
+	target_type VARCHAR(32), 
+	payload_hash VARCHAR(128), 
+	observed_at DATETIME NOT NULL, 
+	ingested_at DATETIME NOT NULL, 
+	PRIMARY KEY (event_id), 
+	CONSTRAINT uq_evidence_idempotency UNIQUE (idempotency_key)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00033s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_evidence_events_target_id ON evidence_events (target_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00038s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_evidence_events_idempotency_key ON evidence_events (idempotency_key)
+INFO:sqlalchemy.engine.Engine:[no key 0.00030s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_evidence_events_source_id ON evidence_events (source_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00029s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_evidence_events_observed_at ON evidence_events (observed_at)
+INFO:sqlalchemy.engine.Engine:[no key 0.00033s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_evidence_events_channel ON evidence_events (channel)
+INFO:sqlalchemy.engine.Engine:[no key 0.00047s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE principals (
+	principal_id VARCHAR(128) NOT NULL, 
+	subject VARCHAR(256) NOT NULL, 
+	roles JSON NOT NULL, 
+	api_key_hash VARCHAR(256), 
+	is_active BOOLEAN NOT NULL, 
+	created_at DATETIME NOT NULL, 
+	updated_at DATETIME NOT NULL, 
+	PRIMARY KEY (principal_id), 
+	UNIQUE (subject)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00040s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE aliases (
+	alias_id VARCHAR(36) NOT NULL, 
+	entity_id VARCHAR(128) NOT NULL, 
+	alias VARCHAR(512) NOT NULL, 
+	source VARCHAR(64), 
+	created_at DATETIME NOT NULL, 
+	PRIMARY KEY (alias_id), 
+	CONSTRAINT uq_alias_entity_alias UNIQUE (entity_id, alias), 
+	FOREIGN KEY(entity_id) REFERENCES entities (entity_id) ON DELETE CASCADE
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00033s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_aliases_entity_id ON aliases (entity_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00035s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_aliases_alias ON aliases (alias)
+INFO:sqlalchemy.engine.Engine:[no key 0.00038s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE benchmark_results (
+	result_id VARCHAR(36) NOT NULL, 
+	run_id VARCHAR(36) NOT NULL, 
+	loss FLOAT NOT NULL, 
+	method VARCHAR(32) NOT NULL, 
+	metrics JSON NOT NULL, 
+	data_class VARCHAR(64) NOT NULL, 
+	created_at DATETIME NOT NULL, 
+	PRIMARY KEY (result_id), 
+	FOREIGN KEY(run_id) REFERENCES benchmark_runs (run_id) ON DELETE CASCADE
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00042s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_benchmark_results_run_id ON benchmark_results (run_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00050s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE decisions (
+	decision_id VARCHAR(36) NOT NULL, 
+	entity_id VARCHAR(128) NOT NULL, 
+	verdict VARCHAR(16) NOT NULL, 
+	coverage FLOAT NOT NULL, 
+	truncated BOOLEAN NOT NULL, 
+	reason_codes JSON NOT NULL, 
+	rationale JSON NOT NULL, 
+	as_of DATETIME NOT NULL, 
+	engine_version VARCHAR(16) NOT NULL, 
+	change_type VARCHAR(64), 
+	supersedes_id VARCHAR(36), 
+	superseded_by_id VARCHAR(36), 
+	created_at DATETIME NOT NULL, 
+	created_by VARCHAR(128), 
+	PRIMARY KEY (decision_id), 
+	FOREIGN KEY(entity_id) REFERENCES entities (entity_id), 
+	FOREIGN KEY(supersedes_id) REFERENCES decisions (decision_id), 
+	FOREIGN KEY(superseded_by_id) REFERENCES decisions (decision_id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00046s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_decisions_as_of ON decisions (as_of)
+INFO:sqlalchemy.engine.Engine:[no key 0.00035s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_decisions_entity_id ON decisions (entity_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00032s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_decisions_verdict ON decisions (verdict)
+INFO:sqlalchemy.engine.Engine:[no key 0.00032s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE edges (
+	edge_id VARCHAR(256) NOT NULL, 
+	source_id VARCHAR(128) NOT NULL, 
+	target_id VARCHAR(128) NOT NULL, 
+	relation VARCHAR(32) NOT NULL, 
+	layer VARCHAR(16) NOT NULL, 
+	confidence FLOAT NOT NULL, 
+	necessity VARCHAR(16) NOT NULL, 
+	evidence_count INTEGER NOT NULL, 
+	last_observed_at DATETIME, 
+	valid_from DATETIME NOT NULL, 
+	valid_to DATETIME, 
+	created_at DATETIME NOT NULL, 
+	updated_at DATETIME NOT NULL, 
+	PRIMARY KEY (edge_id), 
+	FOREIGN KEY(source_id) REFERENCES entities (entity_id), 
+	FOREIGN KEY(target_id) REFERENCES entities (entity_id)
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00031s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_edges_layer ON edges (layer)
+INFO:sqlalchemy.engine.Engine:[no key 0.00033s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_edges_target_id ON edges (target_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00032s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_edges_source_id ON edges (source_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00028s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE decision_paths (
+	path_id VARCHAR(36) NOT NULL, 
+	decision_id VARCHAR(36) NOT NULL, 
+	path_nodes JSON NOT NULL, 
+	path_confidence FLOAT NOT NULL, 
+	is_critical_path BOOLEAN NOT NULL, 
+	PRIMARY KEY (path_id), 
+	FOREIGN KEY(decision_id) REFERENCES decisions (decision_id) ON DELETE CASCADE
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00028s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_decision_paths_decision_id ON decision_paths (decision_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00033s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE runbook_executions (
+	execution_id VARCHAR(36) NOT NULL, 
+	decision_id VARCHAR(36) NOT NULL, 
+	stage VARCHAR(64) NOT NULL, 
+	status VARCHAR(32) NOT NULL, 
+	started_at DATETIME, 
+	completed_at DATETIME, 
+	notes TEXT, 
+	PRIMARY KEY (execution_id), 
+	FOREIGN KEY(decision_id) REFERENCES decisions (decision_id) ON DELETE CASCADE
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00029s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_runbook_executions_decision_id ON runbook_executions (decision_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00030s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE edge_channel_evidence (
+	id VARCHAR(36) NOT NULL, 
+	edge_id VARCHAR(256) NOT NULL, 
+	channel VARCHAR(32) NOT NULL, 
+	observation_count INTEGER NOT NULL, 
+	last_observed_at DATETIME, 
+	PRIMARY KEY (id), 
+	CONSTRAINT uq_edge_channel UNIQUE (edge_id, channel), 
+	FOREIGN KEY(edge_id) REFERENCES edges (edge_id) ON DELETE CASCADE
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00027s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_edge_channel_evidence_edge_id ON edge_channel_evidence (edge_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00028s] ()
+INFO:sqlalchemy.engine.Engine:
+CREATE TABLE edge_versions (
+	version_id VARCHAR(36) NOT NULL, 
+	edge_id VARCHAR(256) NOT NULL, 
+	layer VARCHAR(16) NOT NULL, 
+	confidence FLOAT NOT NULL, 
+	snapshot JSON NOT NULL, 
+	valid_from DATETIME NOT NULL, 
+	valid_to DATETIME, 
+	created_at DATETIME NOT NULL, 
+	PRIMARY KEY (version_id), 
+	FOREIGN KEY(edge_id) REFERENCES edges (edge_id) ON DELETE CASCADE
+)
+
+
+INFO:sqlalchemy.engine.Engine:[no key 0.00027s] ()
+INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_edge_versions_edge_id ON edge_versions (edge_id)
+INFO:sqlalchemy.engine.Engine:[no key 0.00049s] ()
+INFO:sqlalchemy.engine.Engine:COMMIT
+INFO:     Application startup complete.

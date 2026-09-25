@@ -12,6 +12,8 @@ from cirda_api.db.models.coverage import CoverageSnapshot
 from cirda_api.db.repositories.base import RepositoryBase, utcnow
 from cirda_api.memory.store import MemoryStore
 
+PROBE_RESTORE_PREFIX = "__probe_restore__:"
+
 
 class CoverageRepository(RepositoryBase):
     async def latest_snapshot(self) -> dict[str, Any] | None:
@@ -61,12 +63,18 @@ class CoverageRepository(RepositoryBase):
 
     async def list_channel_health(self) -> list[dict[str, Any]]:
         if self.memory:
-            return list(self.memory.channel_health.values())
+            return [
+                row
+                for row in self.memory.channel_health.values()
+                if not str(row.get("channel", "")).startswith(PROBE_RESTORE_PREFIX)
+            ]
 
         assert self.session is not None
         result = await self.session.execute(select(ChannelHealthModel))
         rows: list[dict[str, Any]] = []
         for r in result.scalars().all():
+            if str(r.channel).startswith(PROBE_RESTORE_PREFIX):
+                continue
             details: dict[str, Any] = {}
             if r.details:
                 try:
@@ -88,6 +96,40 @@ class CoverageRepository(RepositoryBase):
                 }
             )
         return rows
+
+    async def list_probe_restorations(self, entity_id: str) -> set[str]:
+        if self.memory:
+            return set(self.memory.probe_restorations.get(entity_id, set()))
+
+        assert self.session is not None
+        row = await self.session.get(ChannelHealthModel, f"{PROBE_RESTORE_PREFIX}{entity_id}")
+        if not row or not row.details:
+            return set()
+        try:
+            import json
+
+            parsed = json.loads(row.details)
+        except (json.JSONDecodeError, TypeError):
+            return set()
+        channels = parsed.get("channels") if isinstance(parsed, dict) else None
+        if not isinstance(channels, list):
+            return set()
+        return {str(c) for c in channels}
+
+    async def record_probe_restorations(self, entity_id: str, channels: list[str]) -> set[str]:
+        existing = await self.list_probe_restorations(entity_id)
+        merged = sorted(existing | {str(c) for c in channels})
+        if self.memory:
+            self.memory.probe_restorations[entity_id] = set(merged)
+            return set(merged)
+
+        await self.upsert_channel_health(
+            f"{PROBE_RESTORE_PREFIX}{entity_id}",
+            health_score=1.0,
+            details={"kind": "probe_restoration", "channels": merged, "entity_id": entity_id},
+            suppression_suspected=False,
+        )
+        return set(merged)
 
     async def upsert_channel_health(
         self,

@@ -63,6 +63,7 @@ export function createDecisionReport(overrides: Partial<DecisionReport> = {}): D
           entity_id: 'svc-billing',
           channels: ['database'],
           rationale: 'Restore database audit/collector coverage for this entity\'s data dependencies.',
+          expected_delta_c: 0.112,
         },
       ],
     },

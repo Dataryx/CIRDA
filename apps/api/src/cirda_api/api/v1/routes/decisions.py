@@ -2,11 +2,16 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, status
 
 from cirda_api.api.dependencies import ContainerDep
 from cirda_api.api.v1.schemas.common import PageMeta
-from cirda_api.api.v1.schemas.decisions import DecisionEvaluateRequest, DecisionReport
+from cirda_api.api.v1.schemas.decisions import (
+    DecisionEvaluateRequest,
+    DecisionReport,
+    ProbeApplyRequest,
+    ProbeApplyResult,
+)
 from cirda_api.observability.metrics import DECISIONS
 from cirda_api.security.rbac import RequireApprover, RequireViewer
 from pydantic import BaseModel
@@ -41,6 +46,36 @@ async def evaluate_decision(
         details={"verdict": report["verdict"]},
     )
     return DecisionReport(**report)
+
+
+@router.post("/probes/apply", response_model=ProbeApplyResult)
+async def apply_probes(
+    body: ProbeApplyRequest,
+    container: ContainerDep,
+    principal: RequireApprover,
+) -> ProbeApplyResult:
+    try:
+        result = await container.decision_service.apply_probes(
+            body.entity_id,
+            body.channels,
+            as_of=body.as_of,
+        )
+    except PermissionError as exc:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(exc)) from exc
+    await container.audit_service.log(
+        principal_id=principal.principal_id,
+        action="decision.probe_apply",
+        resource_type="entity",
+        resource_id=body.entity_id,
+        details={
+            "channels": result["channels"],
+            "actual_delta_c": result["actual_delta_c"],
+            "mode": result["mode"],
+        },
+    )
+    return ProbeApplyResult(**result)
 
 
 @router.get("/by-entity/{entity_id}", response_model=DecisionListResponse)

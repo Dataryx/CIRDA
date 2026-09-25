@@ -43,6 +43,8 @@ class MemoryStore:
     runbook_executions: dict[str, list[dict[str, Any]]] = field(default_factory=dict)
     coverage_snapshots: list[dict[str, Any]] = field(default_factory=list)
     channel_health: dict[str, dict[str, Any]] = field(default_factory=dict)
+    # entity_id -> channel values restored by probe apply (suppression lift)
+    probe_restorations: dict[str, set[str]] = field(default_factory=dict)
     calibration_profiles: dict[str, dict[str, Any]] = field(default_factory=dict)
     benchmark_runs: dict[str, dict[str, Any]] = field(default_factory=dict)
     benchmark_results: dict[str, list[dict[str, Any]]] = field(default_factory=dict)
@@ -100,27 +102,45 @@ class MemoryStore:
     def upsert_edge_record(self, edge: DependencyEdge, *, valid_from: datetime, valid_to: datetime | None = None) -> dict[str, Any]:
         key = edge.edge_id or f"{edge.source_id}->{edge.target_id}:{edge.relation.value}"
         now = _utcnow()
-        record = {
-            "edge_id": key,
-            "source_id": edge.source_id,
-            "target_id": edge.target_id,
-            "relation": edge.relation.value,
-            "layer": edge.layer.value,
-            "confidence": edge.confidence,
-            "necessity": edge.necessity.value,
-            "evidence_count": edge.evidence_count,
-            "last_observed_at": datetime.fromtimestamp(edge.last_observed_epoch, tz=timezone.utc)
-            if edge.last_observed_epoch
-            else now,
-            "valid_from": valid_from,
-            "valid_to": valid_to,
-            "created_at": now,
-            "updated_at": now,
-        }
         with self._lock:
+            existing = self.edges.get(key)
+            necessity = edge.necessity.value
+            # Preserve operator annotations when fusion still reports unknown.
+            if (
+                existing
+                and existing.get("necessity", "unknown") != Necessity.UNKNOWN.value
+                and edge.necessity == Necessity.UNKNOWN
+            ):
+                necessity = existing["necessity"]
+            record = {
+                "edge_id": key,
+                "source_id": edge.source_id,
+                "target_id": edge.target_id,
+                "relation": edge.relation.value,
+                "layer": edge.layer.value,
+                "confidence": edge.confidence,
+                "necessity": necessity,
+                "evidence_count": edge.evidence_count,
+                "last_observed_at": datetime.fromtimestamp(edge.last_observed_epoch, tz=timezone.utc)
+                if edge.last_observed_epoch
+                else now,
+                "valid_from": valid_from if existing is None else existing.get("valid_from", valid_from),
+                "valid_to": valid_to if existing is None else existing.get("valid_to", valid_to),
+                "created_at": existing["created_at"] if existing else now,
+                "updated_at": now,
+            }
             self.edges[key] = record
-            ch = self.edge_channel_evidence.setdefault(key, {})
+            self.edge_channel_evidence.setdefault(key, {})
             return record
+
+    def update_edge_necessity(self, edge_id: str, necessity: str) -> dict[str, Any] | None:
+        with self._lock:
+            row = self.edges.get(edge_id)
+            if not row:
+                return None
+            row = {**row, "necessity": necessity, "updated_at": _utcnow()}
+            self.edges[edge_id] = row
+            return deepcopy(row)
 
     def increment_channel_evidence(self, edge_id: str, channel: str, observed_at: datetime) -> None:
         with self._lock:

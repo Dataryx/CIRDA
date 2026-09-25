@@ -24,6 +24,15 @@ Entity resolution merges aliases when similarity exceeds configured thresholds
 | `confidence` | Fused support S ∈ (0, 1] after decay |
 | `necessity` | required, optional, redundant, fallback, unknown |
 
+**Necessity semantics (operator-annotated):** `required`, `unknown`, and `fallback`
+are load-bearing for critical gate/blast traversal. `optional` and `redundant`
+edges are ignored for critical reachability (UNKNOWN defaults to load-bearing so
+unset edges never silently hide risk). Operators set necessity via
+`PATCH /api/v1/edges/{edge_id}`; ingest preserves non-`unknown` annotations.
+Inference does not auto-classify necessity. `GET /api/v1/edges/necessity-suggestions`
+returns suggest-only heuristics (required / redundant / optional) for UNKNOWN edges;
+operators accept via PATCH.
+
 ### Layer thresholds
 
 - **Confirmed (G_c):** S ≥ θ_c (0.62) with direct-evidence policy

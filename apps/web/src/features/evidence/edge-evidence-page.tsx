@@ -1,11 +1,17 @@
 import { useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { useEdge, useEdgeEvidence } from '@/api/queries/use-edges';
+import {
+  useEdge,
+  useEdgeEvidence,
+  useNecessitySuggestions,
+  usePatchEdgeNecessity,
+} from '@/api/queries/use-edges';
 import { FusionBreakdownCard } from '@/components/data-display/fusion-breakdown-card';
 import { SupportTooltip } from '@/components/data-display/support-tooltip';
 import { ErrorAlert } from '@/components/feedback/error-alert';
 import { LoadingSpinner } from '@/components/feedback/loading-spinner';
 import { PageHeader } from '@/components/layout/page-header';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -17,6 +23,8 @@ export function EdgeEvidencePage() {
   const { edgeId = '' } = useParams();
   const edge = useEdge(edgeId);
   const evidence = useEdgeEvidence(edgeId);
+  const hints = useNecessitySuggestions(edge.data?.source_id ?? '');
+  const patchNecessity = usePatchEdgeNecessity();
 
   const fusionBreakdown = useMemo((): FusionBreakdown | null => {
     if (!edge.data || !evidence.data) return null;
@@ -35,6 +43,8 @@ export function EdgeEvidencePage() {
     };
   }, [edge.data, evidence.data]);
 
+  const hintForEdge = hints.data?.items.find((item) => item.edge_id === edge.data?.edge_id);
+
   const isLoading = edge.isLoading || evidence.isLoading;
   const error = edge.error ?? evidence.error;
 
@@ -48,9 +58,12 @@ export function EdgeEvidencePage() {
         title="Edge Evidence"
         description={edge.data.edge_id}
         actions={
-          <Badge variant={edge.data.layer === 'confirmed' ? 'default' : 'secondary'}>
-            {edge.data.layer}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline">{edge.data.necessity ?? 'unknown'}</Badge>
+            <Badge variant={edge.data.layer === 'confirmed' ? 'default' : 'secondary'}>
+              {edge.data.layer}
+            </Badge>
+          </div>
         }
       />
 
@@ -82,6 +95,38 @@ export function EdgeEvidencePage() {
           </CardContent>
         </Card>
       </div>
+
+      {hintForEdge ? (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="text-base">Necessity suggestion</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            <p>
+              Suggested:{' '}
+              <span className="font-mono font-medium">{hintForEdge.suggested_necessity}</span>
+              {' '}(confidence {formatConfidence(hintForEdge.confidence)})
+            </p>
+            <p className="text-muted-foreground">{hintForEdge.rationale}</p>
+            <p className="text-xs text-muted-foreground">
+              Suggest-only heuristic — accepting writes an operator annotation via PATCH; nothing is
+              auto-mutated.
+            </p>
+            <Button
+              size="sm"
+              disabled={patchNecessity.isPending}
+              onClick={() =>
+                patchNecessity.mutate({
+                  edgeId: hintForEdge.edge_id,
+                  necessity: hintForEdge.suggested_necessity,
+                })
+              }
+            >
+              Accept suggestion
+            </Button>
+          </CardContent>
+        </Card>
+      ) : null}
 
       <div className="grid gap-6 lg:grid-cols-2">
         {fusionBreakdown ? <FusionBreakdownCard breakdown={fusionBreakdown} /> : null}

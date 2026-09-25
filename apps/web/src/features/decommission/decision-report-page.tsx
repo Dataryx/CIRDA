@@ -1,7 +1,8 @@
 import { Download, RefreshCw } from 'lucide-react';
+import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useDecision } from '@/api/queries/use-decisions';
-import { useRerunDecision } from '@/api/mutations/use-evaluate-decision';
+import { useApplyProbes, useRerunDecision } from '@/api/mutations/use-evaluate-decision';
 import { LimitationsFooter } from '@/components/data-display/limitations-footer';
 import { StatCard } from '@/components/data-display/stat-card';
 import { VerdictBadge } from '@/components/data-display/verdict-badge';
@@ -25,6 +26,8 @@ export function DecisionReportPage() {
   const { decisionId = '' } = useParams();
   const decision = useDecision(decisionId);
   const rerun = useRerunDecision();
+  const applyProbes = useApplyProbes();
+  const [applyNote, setApplyNote] = useState<string | null>(null);
 
   if (decision.isLoading) return <LoadingSpinner label="Loading decision report…" />;
   if (decision.error) return <ErrorAlert error={decision.error} />;
@@ -185,18 +188,61 @@ export function DecisionReportPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Channels</TableHead>
+                      <TableHead>Expected ΔC</TableHead>
                       <TableHead>Rationale</TableHead>
+                      <TableHead className="w-[1%] whitespace-nowrap">Action</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {rationale.suggested_probes?.map((probe, index) => (
                       <TableRow key={`${probe.channels.join('-')}-${index}`}>
                         <TableCell className="font-medium">{probe.channels.join(', ')}</TableCell>
+                        <TableCell className="font-mono tabular-nums">
+                          {typeof probe.expected_delta_c === 'number'
+                            ? `+${probe.expected_delta_c.toFixed(3)}`
+                            : '—'}
+                        </TableCell>
                         <TableCell>{probe.rationale}</TableCell>
+                        <TableCell>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={applyProbes.isPending}
+                            onClick={() => {
+                              setApplyNote(null);
+                              applyProbes.mutate(
+                                {
+                                  entity_id: report.entity_id,
+                                  channels: probe.channels,
+                                },
+                                {
+                                  onSuccess: (result) => {
+                                    setApplyNote(
+                                      `Applied ${result.channels.join(', ')}: ΔC actual +${result.actual_delta_c.toFixed(3)} (expected +${result.expected_delta_c.toFixed(3)}). Re-evaluate to refresh the verdict.`,
+                                    );
+                                  },
+                                  onError: (error) => {
+                                    setApplyNote(
+                                      error instanceof Error
+                                        ? error.message
+                                        : 'Probe apply failed (is CIRDA_PROBE_EXECUTION_ENABLED set?)',
+                                    );
+                                  },
+                                },
+                              );
+                            }}
+                          >
+                            Apply
+                          </Button>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
+                {applyNote ? <p className="mt-3 text-sm text-muted-foreground">{applyNote}</p> : null}
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Apply lifts channel suppression for coverage (flag-gated). It does not run live collectors.
+                </p>
               </CardContent>
             </Card>
           ) : null}

@@ -94,7 +94,7 @@ CIRDA `false_safe=0` at high loss and several metric cells land within tolerance
 remaining cells are tracked as explicit `xfail` gaps in
 [`packages/cirda-bench/CALIBRATION.md`](packages/cirda-bench/CALIBRATION.md).
 
-**Roadmap hooks (flagged off by default):** probe planner execution/ΔC (coverage-gap probes are wired when `CIRDA_PROBE_PLANNING_ENABLED=true`), necessity models, multi-tenant aggregation.
+**Roadmap hooks:** necessity auto-mutate inference, multi-tenant aggregation; live collector probe execution.
 
 See [docs/paper/fidelity-matrix.md](docs/paper/fidelity-matrix.md) for claim → code → test mapping.
 
@@ -114,11 +114,12 @@ Every decision report includes a limitations footer (configurable via `CIRDA_DEC
 
 | Agent | Expected Verdict | Scenario |
 |-------|------------------|----------|
-| `invoice-reconciler-agent` | UNSAFE | Critical downstream deps, high coverage |
+| `invoice-reconciler-agent` | UNSAFE | Critical downstream deps (ledger); optional invoice-queue edge ignored for critical blast |
 | `legacy-csv-export-agent` | SAFE | Isolated, no critical reachability |
 | `vendor-risk-agent` | INDETERMINATE | Ambiguous identity, insufficient coverage |
 
-Plus: mediated dependency chain, decaying edge, and telemetry suppression on the messaging channel.
+Plus: mediated dependency chain, decaying edge, telemetry suppression on the messaging channel,
+and an operator-annotated `optional` edge (`invoice-reconciler-agent→invoice-queue`).
 
 ## Documentation
 

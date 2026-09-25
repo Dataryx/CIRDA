@@ -2,100 +2,106 @@ openapi: 3.1.0
 info:
   title: CIRDA Control Plane API
   version: 0.1.0
-  description: |
-    Coverage-Informed Retirement Decision Analysis control plane.
-    Tri-state decisions (UNSAFE / SAFE / INDETERMINATE) with explicit coverage.
-  license:
-    name: Apache-2.0
-    url: https://www.apache.org/licenses/LICENSE-2.0
-
-servers:
-  - url: http://localhost:8000
-    description: Local development
-  - url: https://cirda.example.com
-    description: Production
-
-tags:
-  - name: health
-  - name: ingest
-  - name: entities
-  - name: graph
-  - name: edges
-  - name: evidence
-  - name: analysis
-  - name: decisions
-  - name: coverage
-  - name: calibration
-  - name: benchmarks
-  - name: audit
-  - name: admin
-  - name: stream
-  - name: metrics
-
-security:
-  - bearerAuth: []
-  - apiKeyAuth: []
-
 paths:
   /api/v1/health:
     get:
-      tags: [health]
-      summary: Liveness check
-      security: []
+      tags:
+      - health
+      summary: Health
+      operationId: health_api_v1_health_get
       responses:
         '200':
-          description: OK
+          description: Successful Response
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/HealthResponse'
-
   /api/v1/health/ready:
     get:
-      tags: [health]
-      summary: Readiness check
+      tags:
+      - health
+      summary: Readiness
+      operationId: readiness_api_v1_health_ready_get
       responses:
         '200':
-          description: Ready
+          description: Successful Response
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ReadinessResponse'
-
   /api/v1/ingest/events:
     post:
-      tags: [ingest]
-      summary: Ingest single evidence event
+      tags:
+      - ingest
+      summary: Ingest Event
+      operationId: ingest_event_api_v1_ingest_events_post
       parameters:
-        - $ref: '#/components/parameters/IdempotencyKey'
+      - name: Idempotency-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Idempotency-Key
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/IngestEventRequest'
-            examples:
-              trace:
-                value:
-                  raw:
-                    event_id: ex-001
-                    source: trace
-                    source_id: agent-a
-                    target_id: service-b
-                    relation: calls
-                    observed_at: '2026-09-23T10:00:00+00:00'
       responses:
         '200':
-          description: Ingest result
+          description: Successful Response
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/IngestResult'
-
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/v1/ingest/events/batch:
     post:
-      tags: [ingest]
-      summary: Ingest batch of evidence events
+      tags:
+      - ingest
+      summary: Ingest Batch
+      operationId: ingest_batch_api_v1_ingest_events_batch_post
+      parameters:
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
       requestBody:
         required: true
         content:
@@ -104,33 +110,100 @@ paths:
               $ref: '#/components/schemas/IngestBatchRequest'
       responses:
         '200':
-          description: Batch result
+          description: Successful Response
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/IngestBatchResult'
-
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/v1/entities:
     get:
-      tags: [entities]
-      summary: List entities
+      tags:
+      - entities
+      summary: List Entities
+      operationId: list_entities_api_v1_entities_get
       parameters:
-        - $ref: '#/components/parameters/Offset'
-        - $ref: '#/components/parameters/Limit'
-        - name: entity_type
-          in: query
-          schema:
-            type: string
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+          title: Offset
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 500
+          minimum: 1
+          default: 50
+          title: Limit
+      - name: entity_type
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Entity Type
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
       responses:
         '200':
-          description: Entity list
+          description: Successful Response
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/EntityListResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
     post:
-      tags: [entities]
-      summary: Create or upsert entity
+      tags:
+      - entities
+      summary: Create Entity
+      operationId: create_entity_api_v1_entities_post
+      parameters:
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
       requestBody:
         required: true
         content:
@@ -139,164 +212,543 @@ paths:
               $ref: '#/components/schemas/EntityCreateRequest'
       responses:
         '201':
-          description: Created
+          description: Successful Response
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/EntityResponse'
-
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/v1/entities/{entity_id}:
     get:
-      tags: [entities]
-      summary: Get entity by ID
+      tags:
+      - entities
+      summary: Get Entity
+      operationId: get_entity_api_v1_entities__entity_id__get
       parameters:
-        - $ref: '#/components/parameters/EntityId'
+      - name: entity_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Entity Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
       responses:
         '200':
-          description: Entity
+          description: Successful Response
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/EntityResponse'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/v1/graph:
     get:
-      tags: [graph]
-      summary: Get dependency graph payload
+      tags:
+      - graph
+      summary: Get Graph
+      operationId: get_graph_api_v1_graph_get
       parameters:
-        - name: layer
-          in: query
-          schema:
-            type: string
-            enum: [confirmed, possible, all]
-        - $ref: '#/components/parameters/AsOf'
+      - name: layer
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Layer
+      - name: as_of
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: As Of
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
       responses:
         '200':
-          description: Graph
+          description: Successful Response
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/GraphPayload'
-
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/v1/edges:
     get:
-      tags: [edges]
-      summary: List edges
+      tags:
+      - edges
+      summary: List Edges
+      operationId: list_edges_api_v1_edges_get
       parameters:
-        - $ref: '#/components/parameters/Offset'
-        - $ref: '#/components/parameters/Limit'
-        - name: source_id
-          in: query
-          schema:
-            type: string
-        - name: target_id
-          in: query
-          schema:
-            type: string
-        - name: layer
-          in: query
-          schema:
-            type: string
+      - name: layer
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Layer
+      - name: source_id
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Source Id
+      - name: target_id
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Target Id
+      - name: as_of
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: As Of
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+          title: Offset
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 500
+          minimum: 1
+          default: 100
+          title: Limit
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
       responses:
         '200':
-          description: Edge list
+          description: Successful Response
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/EdgeListResponse'
-
-  /api/v1/edges/{edge_id}:
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/edges/necessity-suggestions:
     get:
-      tags: [edges]
-      summary: Get edge by ID
+      tags:
+      - edges
+      summary: Necessity Suggestions
+      operationId: necessity_suggestions_api_v1_edges_necessity_suggestions_get
       parameters:
-        - name: edge_id
-          in: path
-          required: true
-          schema:
-            type: string
+      - name: source_id
+        in: query
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          title: Source Id
+      - name: as_of
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: As Of
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
       responses:
         '200':
-          description: Edge
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NecessityHintListResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/edges/{edge_id}:
+    get:
+      tags:
+      - edges
+      summary: Get Edge
+      operationId: get_edge_api_v1_edges__edge_id__get
+      parameters:
+      - name: edge_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Edge Id
+      - name: as_of
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: As Of
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
+      responses:
+        '200':
+          description: Successful Response
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/EdgeResponse'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-  /api/v1/edges/{edge_id}/evidence:
-    get:
-      tags: [edges]
-      summary: List evidence for edge
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    patch:
+      tags:
+      - edges
+      summary: Patch Edge Necessity
+      operationId: patch_edge_necessity_api_v1_edges__edge_id__patch
       parameters:
-        - name: edge_id
-          in: path
-          required: true
-          schema:
-            type: string
+      - name: edge_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Edge Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EdgeNecessityUpdate'
       responses:
         '200':
-          description: Evidence events
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/edges/{edge_id}/evidence:
+    get:
+      tags:
+      - edges
+      summary: Edge Evidence
+      operationId: edge_evidence_api_v1_edges__edge_id__evidence_get
+      parameters:
+      - name: edge_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Edge Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
+      responses:
+        '200':
+          description: Successful Response
           content:
             application/json:
               schema:
                 type: object
-                properties:
-                  items:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/EvidenceEventResponse'
-
+                additionalProperties: true
+                title: Response Edge Evidence Api V1 Edges  Edge Id  Evidence Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/v1/evidence:
     get:
-      tags: [evidence]
-      summary: List evidence events
+      tags:
+      - evidence
+      summary: List Evidence
+      operationId: list_evidence_api_v1_evidence_get
       parameters:
-        - $ref: '#/components/parameters/Offset'
-        - $ref: '#/components/parameters/Limit'
-        - name: source_id
-          in: query
-          schema:
-            type: string
-        - name: channel
-          in: query
-          schema:
-            type: string
+      - name: source_id
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Source Id
+      - name: target_id
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Target Id
+      - name: channel
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Channel
+      - name: as_of
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: As Of
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+          title: Offset
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 500
+          minimum: 1
+          default: 50
+          title: Limit
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
       responses:
         '200':
-          description: Evidence list
+          description: Successful Response
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/EvidenceListResponse'
-
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/v1/evidence/{event_id}:
     get:
-      tags: [evidence]
-      summary: Get evidence event
+      tags:
+      - evidence
+      summary: Get Evidence
+      operationId: get_evidence_api_v1_evidence__event_id__get
       parameters:
-        - name: event_id
-          in: path
-          required: true
-          schema:
-            type: string
+      - name: event_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Event Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
       responses:
         '200':
-          description: Evidence event
+          description: Successful Response
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/EvidenceEventResponse'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/v1/analysis/blast-radius:
     post:
-      tags: [analysis]
-      summary: Compute blast radius from source entity
+      tags:
+      - analysis
+      summary: Blast Radius
+      operationId: blast_radius_api_v1_analysis_blast_radius_post
+      parameters:
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
       requestBody:
         required: true
         content:
@@ -305,17 +757,42 @@ paths:
               $ref: '#/components/schemas/BlastRadiusRequest'
       responses:
         '200':
-          description: Blast radius result
+          description: Successful Response
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties: true
-
+                title: Response Blast Radius Api V1 Analysis Blast Radius Post
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/v1/analysis/reachability:
     post:
-      tags: [analysis]
-      summary: Compute reachability from source entity
+      tags:
+      - analysis
+      summary: Reachability
+      operationId: reachability_api_v1_analysis_reachability_post
+      parameters:
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
       requestBody:
         required: true
         content:
@@ -324,41 +801,103 @@ paths:
               $ref: '#/components/schemas/ReachabilityRequest'
       responses:
         '200':
-          description: Reachability result
+          description: Successful Response
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties: true
-
+                title: Response Reachability Api V1 Analysis Reachability Post
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/v1/analysis/paths:
     get:
-      tags: [analysis]
-      summary: Query paths between entities
+      tags:
+      - analysis
+      summary: Paths
+      operationId: paths_api_v1_analysis_paths_get
       parameters:
-        - name: source_id
-          in: query
-          required: true
-          schema:
-            type: string
-        - name: target_id
-          in: query
-          schema:
-            type: string
-        - $ref: '#/components/parameters/AsOf'
+      - name: source_id
+        in: query
+        required: true
+        schema:
+          type: string
+          title: Source Id
+      - name: as_of
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: As Of
+      - name: target_id
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Target Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
       responses:
         '200':
-          description: Path query result
+          description: Successful Response
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties: true
-
+                title: Response Paths Api V1 Analysis Paths Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/v1/decisions/evaluate:
     post:
-      tags: [decisions]
-      summary: Evaluate retirement decision for entity
+      tags:
+      - decisions
+      summary: Evaluate Decision
+      operationId: evaluate_decision_api_v1_decisions_evaluate_post
+      parameters:
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
       requestBody:
         required: true
         content:
@@ -367,923 +906,2048 @@ paths:
               $ref: '#/components/schemas/DecisionEvaluateRequest'
       responses:
         '201':
-          description: Decision report
+          description: Successful Response
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/DecisionReport'
-
-  /api/v1/decisions/by-entity/{entity_id}:
-    get:
-      tags: [decisions]
-      summary: List decisions for entity
-      parameters:
-        - $ref: '#/components/parameters/EntityId'
-        - $ref: '#/components/parameters/Offset'
-        - name: limit
-          in: query
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 100
-            default: 20
-      responses:
-        '200':
-          description: Decision list
+        '422':
+          description: Validation Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DecisionListResponse'
-
-  /api/v1/decisions/{decision_id}:
-    get:
-      tags: [decisions]
-      summary: Get decision by ID
-      parameters:
-        - name: decision_id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Decision report
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DecisionReport'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-  /api/v1/decisions/{decision_id}/rerun:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/decisions/probes/apply:
     post:
-      tags: [decisions]
-      summary: Rerun decision evaluation
+      tags:
+      - decisions
+      summary: Apply Probes
+      operationId: apply_probes_api_v1_decisions_probes_apply_post
       parameters:
-        - name: decision_id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '201':
-          description: New decision report
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DecisionReport'
-
-  /api/v1/coverage:
-    get:
-      tags: [coverage]
-      summary: Get coverage estimate
-      parameters:
-        - $ref: '#/components/parameters/AsOf'
-      responses:
-        '200':
-          description: Coverage estimate
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CoverageEstimate'
-
-  /api/v1/coverage/snapshots:
-    get:
-      tags: [coverage]
-      summary: List coverage snapshots
-      parameters:
-        - $ref: '#/components/parameters/Offset'
-        - name: limit
-          in: query
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 100
-            default: 20
-      responses:
-        '200':
-          description: Snapshot list
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SnapshotListResponse'
-
-  /api/v1/coverage/channel-health:
-    get:
-      tags: [coverage]
-      summary: Channel health status
-      responses:
-        '200':
-          description: Channel health
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  channels:
-                    type: array
-                    items:
-                      type: object
-                      additionalProperties: true
-
-  /api/v1/calibration:
-    get:
-      tags: [calibration]
-      summary: Get calibration profile
-      responses:
-        '200':
-          description: Calibration profile
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CalibrationProfile'
-    put:
-      tags: [calibration]
-      summary: Update calibration profile
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CalibrationProfile'
+              $ref: '#/components/schemas/ProbeApplyRequest'
       responses:
         '200':
-          description: Updated profile
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProbeApplyResult'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/decisions/by-entity/{entity_id}:
+    get:
+      tags:
+      - decisions
+      summary: List Entity Decisions
+      operationId: list_entity_decisions_api_v1_decisions_by_entity__entity_id__get
+      parameters:
+      - name: entity_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Entity Id
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+          title: Offset
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 100
+          minimum: 1
+          default: 20
+          title: Limit
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DecisionListResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/decisions/{decision_id}:
+    get:
+      tags:
+      - decisions
+      summary: Get Decision
+      operationId: get_decision_api_v1_decisions__decision_id__get
+      parameters:
+      - name: decision_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Decision Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DecisionReport'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/decisions/{decision_id}/rerun:
+    post:
+      tags:
+      - decisions
+      summary: Rerun Decision
+      operationId: rerun_decision_api_v1_decisions__decision_id__rerun_post
+      parameters:
+      - name: decision_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Decision Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DecisionReport'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/coverage:
+    get:
+      tags:
+      - coverage
+      summary: Get Coverage
+      operationId: get_coverage_api_v1_coverage_get
+      parameters:
+      - name: as_of
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: As Of
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CoverageEstimate'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/coverage/snapshots:
+    get:
+      tags:
+      - coverage
+      summary: List Snapshots
+      operationId: list_snapshots_api_v1_coverage_snapshots_get
+      parameters:
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+          title: Offset
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 100
+          minimum: 1
+          default: 20
+          title: Limit
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SnapshotListResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/coverage/channel-health:
+    get:
+      tags:
+      - coverage
+      summary: Channel Health
+      operationId: channel_health_api_v1_coverage_channel_health_get
+      parameters:
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                title: Response Channel Health Api V1 Coverage Channel Health Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/calibration:
+    get:
+      tags:
+      - calibration
+      summary: Get Calibration
+      operationId: get_calibration_api_v1_calibration_get
+      parameters:
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
+      responses:
+        '200':
+          description: Successful Response
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/CalibrationProfile'
-
-  /api/v1/benchmarks/runs:
-    get:
-      tags: [benchmarks]
-      summary: List benchmark runs
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    put:
+      tags:
+      - calibration
+      summary: Update Calibration
+      operationId: update_calibration_api_v1_calibration_put
       parameters:
-        - $ref: '#/components/parameters/Offset'
-        - $ref: '#/components/parameters/Limit'
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CalibrationUpdate'
       responses:
         '200':
-          description: Run list
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CalibrationProfile'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/benchmarks/runs:
+    get:
+      tags:
+      - benchmarks
+      summary: List Runs
+      operationId: list_runs_api_v1_benchmarks_runs_get
+      parameters:
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+          title: Offset
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 100
+          minimum: 1
+          default: 20
+          title: Limit
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
+      responses:
+        '200':
+          description: Successful Response
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/BenchmarkRunListResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
     post:
-      tags: [benchmarks]
-      summary: Start benchmark run
+      tags:
+      - benchmarks
+      summary: Create Run
+      operationId: create_run_api_v1_benchmarks_runs_post
+      parameters:
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
       requestBody:
+        required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/BenchmarkRunCreate'
       responses:
         '201':
-          description: Run started
+          description: Successful Response
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/BenchmarkRunResponse'
-
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/v1/benchmarks/runs/{run_id}:
     get:
-      tags: [benchmarks]
-      summary: Get benchmark run results
+      tags:
+      - benchmarks
+      summary: Get Run Results
+      operationId: get_run_results_api_v1_benchmarks_runs__run_id__get
       parameters:
-        - name: run_id
-          in: path
-          required: true
-          schema:
-            type: string
+      - name: run_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Run Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
       responses:
         '200':
-          description: Results envelope
+          description: Successful Response
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/BenchmarkResultsEnvelope'
-
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/v1/audit:
     get:
-      tags: [audit]
-      summary: Query audit log
+      tags:
+      - audit
+      summary: List Audit
+      operationId: list_audit_api_v1_audit_get
       parameters:
-        - $ref: '#/components/parameters/Offset'
-        - $ref: '#/components/parameters/Limit'
-        - name: action
-          in: query
-          schema:
-            type: string
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+          title: Offset
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 200
+          minimum: 1
+          default: 50
+          title: Limit
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
       responses:
         '200':
-          description: Audit entries
+          description: Successful Response
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuditListResponse'
-
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/v1/admin/snapshot:
     post:
-      tags: [admin]
-      summary: Trigger graph/coverage snapshot job
+      tags:
+      - admin
+      summary: Trigger Snapshot
+      operationId: trigger_snapshot_api_v1_admin_snapshot_post
+      parameters:
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
       responses:
         '200':
-          description: Job accepted
+          description: Successful Response
           content:
             application/json:
               schema:
                 type: object
-                properties:
-                  status:
-                    type: string
-
+                additionalProperties:
+                  type: string
+                title: Response Trigger Snapshot Api V1 Admin Snapshot Post
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/v1/admin/decay:
     post:
-      tags: [admin]
-      summary: Trigger edge decay job
+      tags:
+      - admin
+      summary: Trigger Decay
+      operationId: trigger_decay_api_v1_admin_decay_post
+      parameters:
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
       responses:
         '200':
-          description: Job accepted
-
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+                title: Response Trigger Decay Api V1 Admin Decay Post
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/v1/admin/coverage:
     post:
-      tags: [admin]
-      summary: Trigger coverage recompute job
+      tags:
+      - admin
+      summary: Trigger Coverage
+      operationId: trigger_coverage_api_v1_admin_coverage_post
+      parameters:
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
       responses:
         '200':
-          description: Job accepted
-
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+                title: Response Trigger Coverage Api V1 Admin Coverage Post
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/v1/admin/recalibration:
     post:
-      tags: [admin]
-      summary: Trigger recalibration job
+      tags:
+      - admin
+      summary: Trigger Recalibration
+      operationId: trigger_recalibration_api_v1_admin_recalibration_post
+      parameters:
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
       responses:
         '200':
-          description: Job accepted
-
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+                title: Response Trigger Recalibration Api V1 Admin Recalibration Post
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/admin/channel-health:
+    post:
+      tags:
+      - admin
+      summary: Upsert Channel Health
+      operationId: upsert_channel_health_api_v1_admin_channel_health_post
+      parameters:
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChannelHealthUpsert'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+                title: Response Upsert Channel Health Api V1 Admin Channel Health
+                  Post
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/v1/admin/jobs:
     get:
-      tags: [admin]
-      summary: List scheduled jobs status
+      tags:
+      - admin
+      summary: List Jobs
+      operationId: list_jobs_api_v1_admin_jobs_get
+      parameters:
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
       responses:
         '200':
-          description: Job status
+          description: Successful Response
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties: true
-
-  /api/v1/stream:
-    get:
-      tags: [stream]
-      summary: WebSocket event stream
-      description: Upgrade to WebSocket for live graph/evidence/decision events.
-      responses:
-        '101':
-          description: Switching Protocols
-
+                title: Response List Jobs Api V1 Admin Jobs Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /metrics:
     get:
-      tags: [metrics]
-      summary: Prometheus metrics
-      security: []
+      summary: Metrics
+      operationId: metrics_metrics_get
       responses:
         '200':
-          description: Prometheus text exposition
+          description: Successful Response
           content:
-            text/plain:
-              schema:
-                type: string
-
+            application/json:
+              schema: {}
 components:
-  securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-      description: Dev mode accepts Bearer `dev`
-    apiKeyAuth:
-      type: apiKey
-      in: header
-      name: X-API-Key
-
-  parameters:
-    Offset:
-      name: offset
-      in: query
-      schema:
-        type: integer
-        minimum: 0
-        default: 0
-    Limit:
-      name: limit
-      in: query
-      schema:
-        type: integer
-        minimum: 1
-        maximum: 500
-        default: 50
-    EntityId:
-      name: entity_id
-      in: path
-      required: true
-      schema:
-        type: string
-    AsOf:
-      name: as_of
-      in: query
-      schema:
-        type: string
-        format: date-time
-    IdempotencyKey:
-      name: Idempotency-Key
-      in: header
-      schema:
-        type: string
-
-  responses:
-    NotFound:
-      description: Resource not found
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-
   schemas:
-    HealthResponse:
-      type: object
-      required: [status, version]
+    AuditEntry:
       properties:
-        status:
+        log_id:
           type: string
-          example: ok
-        version:
+          title: Log Id
+        principal_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Principal Id
+        action:
           type: string
-
-    ReadinessResponse:
-      type: object
-      required: [status, database, redis]
-      properties:
-        status:
+          title: Action
+        resource_type:
           type: string
-        database:
-          type: string
-        redis:
-          type: string
-
-    PageMeta:
-      type: object
-      required: [total, offset, limit]
-      properties:
-        total:
-          type: integer
-        offset:
-          type: integer
-        limit:
-          type: integer
-
-    ErrorResponse:
-      type: object
-      properties:
-        detail:
-          type: string
-
-    IngestEventRequest:
-      type: object
-      required: [raw]
-      properties:
-        raw:
-          type: object
+          title: Resource Type
+        resource_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Resource Id
+        details:
           additionalProperties: true
-        idempotency_key:
-          type: string
-          nullable: true
-
-    IngestBatchRequest:
+          type: object
+          title: Details
+          default: {}
+        created_at:
+          title: Created At
       type: object
-      required: [events]
+      required:
+      - log_id
+      - principal_id
+      - action
+      - resource_type
+      - created_at
+      title: AuditEntry
+    AuditListResponse:
       properties:
-        events:
-          type: array
+        items:
           items:
-            type: object
-            additionalProperties: true
-        idempotency_key:
-          type: string
-          nullable: true
-
-    EvidenceEventResponse:
+            $ref: '#/components/schemas/AuditEntry'
+          type: array
+          title: Items
+        page:
+          $ref: '#/components/schemas/PageMeta'
       type: object
-      required: [event_id, source_id, target_id, relation, channel, observed_at]
+      required:
+      - items
+      - page
+      title: AuditListResponse
+    BenchmarkResultResponse:
+      properties:
+        result_id:
+          type: string
+          title: Result Id
+        run_id:
+          type: string
+          title: Run Id
+        loss:
+          type: number
+          title: Loss
+        method:
+          type: string
+          title: Method
+        metrics:
+          additionalProperties: true
+          type: object
+          title: Metrics
+        data_class:
+          type: string
+          title: Data Class
+          default: synthetic_benchmark
+        created_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Created At
+      additionalProperties: false
+      type: object
+      required:
+      - result_id
+      - run_id
+      - loss
+      - method
+      - metrics
+      title: BenchmarkResultResponse
+    BenchmarkResultsEnvelope:
+      properties:
+        run:
+          $ref: '#/components/schemas/BenchmarkRunResponse'
+        results:
+          items:
+            $ref: '#/components/schemas/BenchmarkResultResponse'
+          type: array
+          title: Results
+        data_class:
+          type: string
+          title: Data Class
+          default: synthetic_benchmark
+      additionalProperties: false
+      type: object
+      required:
+      - run
+      - results
+      title: BenchmarkResultsEnvelope
+    BenchmarkRunCreate:
+      properties:
+        config:
+          additionalProperties: true
+          type: object
+          title: Config
+      additionalProperties: false
+      type: object
+      title: BenchmarkRunCreate
+    BenchmarkRunListResponse:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/BenchmarkRunResponse'
+          type: array
+          title: Items
+        page:
+          $ref: '#/components/schemas/PageMeta'
+      type: object
+      required:
+      - items
+      - page
+      title: BenchmarkRunListResponse
+    BenchmarkRunResponse:
+      properties:
+        run_id:
+          type: string
+          title: Run Id
+        status:
+          type: string
+          title: Status
+        config:
+          additionalProperties: true
+          type: object
+          title: Config
+        started_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Started At
+        completed_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Completed At
+        created_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Created At
+      additionalProperties: false
+      type: object
+      required:
+      - run_id
+      - status
+      title: BenchmarkRunResponse
+    BlastRadiusRequest:
+      properties:
+        source_id:
+          type: string
+          title: Source Id
+        as_of:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: As Of
+        max_depth:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Max Depth
+        max_nodes:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Max Nodes
+      type: object
+      required:
+      - source_id
+      title: BlastRadiusRequest
+    CalibrationProfile:
+      properties:
+        profile_id:
+          type: string
+          title: Profile Id
+        name:
+          type: string
+          title: Name
+        theta_c:
+          type: number
+          title: Theta C
+        theta_p:
+          type: number
+          title: Theta P
+        c_min:
+          type: number
+          title: C Min
+        is_active:
+          type: boolean
+          title: Is Active
+          default: true
+      type: object
+      required:
+      - profile_id
+      - name
+      - theta_c
+      - theta_p
+      - c_min
+      title: CalibrationProfile
+    CalibrationUpdate:
+      properties:
+        theta_c:
+          type: number
+          title: Theta C
+        theta_p:
+          type: number
+          title: Theta P
+        c_min:
+          type: number
+          title: C Min
+      type: object
+      required:
+      - theta_c
+      - theta_p
+      - c_min
+      title: CalibrationUpdate
+    ChannelHealthUpsert:
+      properties:
+        channel:
+          type: string
+          title: Channel
+        health_score:
+          type: number
+          maximum: 1.0
+          minimum: 0.0
+          title: Health Score
+        lag_seconds:
+          type: number
+          minimum: 0.0
+          title: Lag Seconds
+          default: 0.0
+        suppression_suspected:
+          type: boolean
+          title: Suppression Suspected
+          default: false
+        details:
+          additionalProperties: true
+          type: object
+          title: Details
+      type: object
+      required:
+      - channel
+      - health_score
+      title: ChannelHealthUpsert
+    CoverageEstimate:
+      properties:
+        coverage:
+          type: number
+          title: Coverage
+        observed_entities:
+          type: integer
+          title: Observed Entities
+        total_entities:
+          type: integer
+          title: Total Entities
+        suppressed_channels:
+          items:
+            type: string
+          type: array
+          title: Suppressed Channels
+        meets_threshold:
+          type: boolean
+          title: Meets Threshold
+        c_min:
+          type: number
+          title: C Min
+        as_of:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: As Of
+        scope_entity_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Scope Entity Id
+        estimator:
+          type: string
+          title: Estimator
+          default: production
+        label:
+          type: string
+          title: Label
+          default: estimate
+      additionalProperties: false
+      type: object
+      required:
+      - coverage
+      - observed_entities
+      - total_entities
+      - meets_threshold
+      - c_min
+      title: CoverageEstimate
+    CoverageSnapshotResponse:
+      properties:
+        snapshot_id:
+          type: string
+          title: Snapshot Id
+        coverage:
+          type: number
+          title: Coverage
+        observed_entities:
+          type: integer
+          title: Observed Entities
+        total_entities:
+          type: integer
+          title: Total Entities
+        suppressed_channels:
+          items:
+            type: string
+          type: array
+          title: Suppressed Channels
+        scope:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Scope
+        captured_at:
+          type: string
+          format: date-time
+          title: Captured At
+      additionalProperties: false
+      type: object
+      required:
+      - snapshot_id
+      - coverage
+      - observed_entities
+      - total_entities
+      - captured_at
+      title: CoverageSnapshotResponse
+    DecisionEvaluateRequest:
+      properties:
+        entity_id:
+          type: string
+          title: Entity Id
+        as_of:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: As Of
+        change_type:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Change Type
+      additionalProperties: false
+      type: object
+      required:
+      - entity_id
+      title: DecisionEvaluateRequest
+    DecisionListResponse:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/DecisionReport'
+          type: array
+          title: Items
+        page:
+          $ref: '#/components/schemas/PageMeta'
+      type: object
+      required:
+      - items
+      - page
+      title: DecisionListResponse
+    DecisionRationale:
+      properties:
+        summary:
+          type: string
+          title: Summary
+        details:
+          items:
+            type: string
+          type: array
+          title: Details
+        reason_codes:
+          items:
+            type: string
+          type: array
+          title: Reason Codes
+        blast_radius:
+          additionalProperties: true
+          type: object
+          title: Blast Radius
+        coverage_breakdown:
+          additionalProperties: true
+          type: object
+          title: Coverage Breakdown
+        suggested_runbook:
+          items:
+            $ref: '#/components/schemas/RunbookActionSchema'
+          type: array
+          title: Suggested Runbook
+        suggested_probes:
+          items:
+            $ref: '#/components/schemas/ProbePlanSchema'
+          type: array
+          title: Suggested Probes
+      additionalProperties: false
+      type: object
+      required:
+      - summary
+      title: DecisionRationale
+    DecisionReport:
+      properties:
+        decision_id:
+          type: string
+          title: Decision Id
+        entity_id:
+          type: string
+          title: Entity Id
+        verdict:
+          $ref: '#/components/schemas/VerdictSchema'
+        coverage:
+          type: number
+          title: Coverage
+        truncated:
+          type: boolean
+          title: Truncated
+          default: false
+        reason_codes:
+          items:
+            type: string
+          type: array
+          title: Reason Codes
+        rationale:
+          anyOf:
+          - $ref: '#/components/schemas/DecisionRationale'
+          - additionalProperties: true
+            type: object
+          title: Rationale
+        limitations_footer:
+          type: string
+          title: Limitations Footer
+        as_of:
+          type: string
+          format: date-time
+          title: As Of
+        engine_version:
+          type: string
+          title: Engine Version
+        change_type:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Change Type
+        supersedes:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Supersedes
+        superseded_by:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Superseded By
+        created_by:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Created By
+        created_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Created At
+        paths:
+          items:
+            additionalProperties: true
+            type: object
+          type: array
+          title: Paths
+      additionalProperties: false
+      type: object
+      required:
+      - decision_id
+      - entity_id
+      - verdict
+      - coverage
+      - rationale
+      - limitations_footer
+      - as_of
+      - engine_version
+      title: DecisionReport
+    EdgeListResponse:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/EdgeResponse'
+          type: array
+          title: Items
+        page:
+          $ref: '#/components/schemas/PageMeta'
+      type: object
+      required:
+      - items
+      - page
+      title: EdgeListResponse
+    EdgeNecessityUpdate:
+      properties:
+        necessity:
+          type: string
+          title: Necessity
+          description: 'Operator necessity annotation: required|optional|redundant|fallback|unknown'
+      type: object
+      required:
+      - necessity
+      title: EdgeNecessityUpdate
+    EdgeResponse:
+      properties:
+        edge_id:
+          type: string
+          title: Edge Id
+        source_id:
+          type: string
+          title: Source Id
+        target_id:
+          type: string
+          title: Target Id
+        relation:
+          type: string
+          title: Relation
+        layer:
+          type: string
+          title: Layer
+        confidence:
+          type: number
+          title: Confidence
+        necessity:
+          type: string
+          title: Necessity
+          default: unknown
+        evidence_count:
+          type: integer
+          title: Evidence Count
+          default: 0
+      type: object
+      required:
+      - edge_id
+      - source_id
+      - target_id
+      - relation
+      - layer
+      - confidence
+      title: EdgeResponse
+    EntityCreateRequest:
+      properties:
+        entity_id:
+          type: string
+          title: Entity Id
+        entity_type:
+          $ref: '#/components/schemas/EntityTypeSchema'
+        name:
+          type: string
+          title: Name
+        criticality:
+          type: string
+          title: Criticality
+          default: unknown
+        metadata:
+          additionalProperties: true
+          type: object
+          title: Metadata
+      additionalProperties: false
+      type: object
+      required:
+      - entity_id
+      - entity_type
+      - name
+      title: EntityCreateRequest
+    EntityListResponse:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/EntityResponse'
+          type: array
+          title: Items
+        page:
+          $ref: '#/components/schemas/PageMeta'
+      additionalProperties: false
+      type: object
+      required:
+      - items
+      - page
+      title: EntityListResponse
+    EntityResponse:
+      properties:
+        entity_id:
+          type: string
+          title: Entity Id
+        entity_type:
+          anyOf:
+          - $ref: '#/components/schemas/EntityTypeSchema'
+          - type: string
+          title: Entity Type
+        name:
+          type: string
+          title: Name
+        criticality:
+          type: string
+          title: Criticality
+          default: unknown
+        metadata:
+          additionalProperties: true
+          type: object
+          title: Metadata
+        aliases:
+          items:
+            type: string
+          type: array
+          title: Aliases
+        created_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Created At
+        updated_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Updated At
+      additionalProperties: false
+      type: object
+      required:
+      - entity_id
+      - entity_type
+      - name
+      title: EntityResponse
+    EntityTypeSchema:
+      type: string
+      enum:
+      - agent
+      - tool
+      - service
+      - data
+      - queue
+      - credential
+      - model
+      title: EntityTypeSchema
+    EvidenceEventResponse:
       properties:
         event_id:
           type: string
+          title: Event Id
         source_id:
           type: string
+          title: Source Id
         target_id:
           type: string
+          title: Target Id
         relation:
           type: string
+          title: Relation
         channel:
           type: string
+          title: Channel
         observed_at:
           type: string
           format: date-time
+          title: Observed At
         source_type:
-          type: string
-          nullable: true
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Source Type
         target_type:
-          type: string
-          nullable: true
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Target Type
         payload_hash:
-          type: string
-          nullable: true
-
-    IngestResult:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Payload Hash
+        ingested_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Ingested At
+      additionalProperties: false
       type: object
-      required: [event, created, edge_updated]
+      required:
+      - event_id
+      - source_id
+      - target_id
+      - relation
+      - channel
+      - observed_at
+      title: EvidenceEventResponse
+    EvidenceListResponse:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/EvidenceEventResponse'
+          type: array
+          title: Items
+        page:
+          $ref: '#/components/schemas/PageMeta'
+      type: object
+      required:
+      - items
+      - page
+      title: EvidenceListResponse
+    GraphEdge:
+      properties:
+        edge_id:
+          type: string
+          title: Edge Id
+        source_id:
+          type: string
+          title: Source Id
+        target_id:
+          type: string
+          title: Target Id
+        relation:
+          type: string
+          title: Relation
+        layer:
+          type: string
+          title: Layer
+        confidence:
+          type: number
+          title: Confidence
+        necessity:
+          type: string
+          title: Necessity
+          default: unknown
+        evidence_count:
+          type: integer
+          title: Evidence Count
+          default: 0
+      additionalProperties: false
+      type: object
+      required:
+      - edge_id
+      - source_id
+      - target_id
+      - relation
+      - layer
+      - confidence
+      title: GraphEdge
+    GraphLayerSchema:
+      type: string
+      enum:
+      - confirmed
+      - possible
+      - all
+      title: GraphLayerSchema
+    GraphNode:
+      properties:
+        entity_id:
+          type: string
+          title: Entity Id
+        entity_type:
+          type: string
+          title: Entity Type
+        name:
+          type: string
+          title: Name
+        criticality:
+          type: string
+          title: Criticality
+      additionalProperties: false
+      type: object
+      required:
+      - entity_id
+      - entity_type
+      - name
+      - criticality
+      title: GraphNode
+    GraphPayload:
+      properties:
+        nodes:
+          items:
+            $ref: '#/components/schemas/GraphNode'
+          type: array
+          title: Nodes
+        edges:
+          items:
+            $ref: '#/components/schemas/GraphEdge'
+          type: array
+          title: Edges
+        layer:
+          anyOf:
+          - $ref: '#/components/schemas/GraphLayerSchema'
+          - type: string
+          title: Layer
+        as_of:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: As Of
+        engine_version:
+          type: string
+          title: Engine Version
+      additionalProperties: false
+      type: object
+      required:
+      - nodes
+      - edges
+      - layer
+      - engine_version
+      title: GraphPayload
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    HealthResponse:
+      properties:
+        status:
+          type: string
+          title: Status
+          default: ok
+        version:
+          type: string
+          title: Version
+      additionalProperties: false
+      type: object
+      required:
+      - version
+      title: HealthResponse
+    IngestBatchRequest:
+      properties:
+        events:
+          items:
+            additionalProperties: true
+            type: object
+          type: array
+          title: Events
+        idempotency_key:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Idempotency Key
+      additionalProperties: false
+      type: object
+      required:
+      - events
+      title: IngestBatchRequest
+    IngestBatchResult:
+      properties:
+        results:
+          items:
+            $ref: '#/components/schemas/IngestResult'
+          type: array
+          title: Results
+        accepted:
+          type: integer
+          title: Accepted
+        duplicates:
+          type: integer
+          title: Duplicates
+      additionalProperties: false
+      type: object
+      required:
+      - results
+      - accepted
+      - duplicates
+      title: IngestBatchResult
+    IngestEventRequest:
+      properties:
+        raw:
+          additionalProperties: true
+          type: object
+          title: Raw
+        idempotency_key:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Idempotency Key
+      additionalProperties: false
+      type: object
+      required:
+      - raw
+      title: IngestEventRequest
+    IngestResult:
       properties:
         event:
           $ref: '#/components/schemas/EvidenceEventResponse'
         created:
           type: boolean
+          title: Created
         edge_updated:
           type: boolean
-
-    IngestBatchResult:
+          title: Edge Updated
+      additionalProperties: false
       type: object
-      required: [results, accepted, duplicates]
+      required:
+      - event
+      - created
+      - edge_updated
+      title: IngestResult
+    NecessityHintListResponse:
       properties:
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/IngestResult'
-        accepted:
-          type: integer
-        duplicates:
-          type: integer
-
-    EntityResponse:
-      type: object
-      required: [entity_id, entity_type, name]
-      properties:
-        entity_id:
+        source_id:
           type: string
-        entity_type:
-          type: string
-        name:
-          type: string
-        criticality:
-          type: string
-          default: unknown
-        metadata:
-          type: object
-          additionalProperties: true
-        aliases:
-          type: array
-          items:
-            type: string
-        created_at:
-          type: string
-          format: date-time
-          nullable: true
-        updated_at:
-          type: string
-          format: date-time
-          nullable: true
-
-    EntityCreateRequest:
-      type: object
-      required: [entity_id, entity_type, name]
-      properties:
-        entity_id:
-          type: string
-        entity_type:
-          type: string
-          enum: [agent, tool, service, data, queue, credential, model]
-        name:
-          type: string
-        criticality:
-          type: string
-        metadata:
-          type: object
-          additionalProperties: true
-
-    EntityListResponse:
-      type: object
-      required: [items, page]
-      properties:
+          title: Source Id
         items:
-          type: array
           items:
-            $ref: '#/components/schemas/EntityResponse'
-        page:
-          $ref: '#/components/schemas/PageMeta'
-
-    GraphNode:
+            $ref: '#/components/schemas/NecessityHintSchema'
+          type: array
+          title: Items
+        mode:
+          type: string
+          title: Mode
+          default: suggest_only
       type: object
-      required: [entity_id, entity_type, name, criticality]
-      properties:
-        entity_id:
-          type: string
-        entity_type:
-          type: string
-        name:
-          type: string
-        criticality:
-          type: string
-
-    GraphEdge:
-      type: object
-      required: [edge_id, source_id, target_id, relation, layer, confidence]
+      required:
+      - source_id
+      - items
+      title: NecessityHintListResponse
+    NecessityHintSchema:
       properties:
         edge_id:
           type: string
+          title: Edge Id
         source_id:
           type: string
+          title: Source Id
         target_id:
           type: string
-        relation:
+          title: Target Id
+        current_necessity:
           type: string
-        layer:
+          title: Current Necessity
+        suggested_necessity:
           type: string
+          title: Suggested Necessity
         confidence:
           type: number
-        necessity:
+          title: Confidence
+        rationale:
           type: string
-        evidence_count:
-          type: integer
-
-    GraphPayload:
+          title: Rationale
+        signals:
+          additionalProperties: true
+          type: object
+          title: Signals
       type: object
-      required: [nodes, edges, layer, engine_version]
+      required:
+      - edge_id
+      - source_id
+      - target_id
+      - current_necessity
+      - suggested_necessity
+      - confidence
+      - rationale
+      title: NecessityHintSchema
+    PageMeta:
       properties:
-        nodes:
-          type: array
-          items:
-            $ref: '#/components/schemas/GraphNode'
-        edges:
-          type: array
-          items:
-            $ref: '#/components/schemas/GraphEdge'
-        layer:
+        total:
+          type: integer
+          title: Total
+        offset:
+          type: integer
+          title: Offset
+        limit:
+          type: integer
+          title: Limit
+      additionalProperties: false
+      type: object
+      required:
+      - total
+      - offset
+      - limit
+      title: PageMeta
+    ProbeApplyRequest:
+      properties:
+        entity_id:
           type: string
+          title: Entity Id
+        channels:
+          items:
+            type: string
+          type: array
+          minItems: 1
+          title: Channels
         as_of:
-          type: string
-          format: date-time
-          nullable: true
-        engine_version:
-          type: string
-
-    EdgeResponse:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: As Of
+      additionalProperties: false
       type: object
-      additionalProperties: true
-
-    EdgeListResponse:
-      type: object
-      required: [items, page]
+      required:
+      - entity_id
+      - channels
+      title: ProbeApplyRequest
+    ProbeApplyResult:
       properties:
-        items:
-          type: array
+        entity_id:
+          type: string
+          title: Entity Id
+        channels:
           items:
-            $ref: '#/components/schemas/EdgeResponse'
-        page:
-          $ref: '#/components/schemas/PageMeta'
-
-    EvidenceListResponse:
-      type: object
-      required: [items, page]
-      properties:
-        items:
+            type: string
           type: array
-          items:
-            $ref: '#/components/schemas/EvidenceEventResponse'
-        page:
-          $ref: '#/components/schemas/PageMeta'
-
-    BlastRadiusRequest:
-      type: object
-      required: [source_id]
-      properties:
-        source_id:
+          title: Channels
+        mode:
           type: string
+          title: Mode
+          default: suppression_lift
+        coverage_before:
+          type: number
+          title: Coverage Before
+        coverage_after:
+          type: number
+          title: Coverage After
+        expected_delta_c:
+          type: number
+          title: Expected Delta C
+        actual_delta_c:
+          type: number
+          title: Actual Delta C
+        suppressed_channels_after:
+          items:
+            type: string
+          type: array
+          title: Suppressed Channels After
         as_of:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: As Of
+      additionalProperties: false
+      type: object
+      required:
+      - entity_id
+      - channels
+      - coverage_before
+      - coverage_after
+      - expected_delta_c
+      - actual_delta_c
+      title: ProbeApplyResult
+    ProbePlanSchema:
+      properties:
+        entity_id:
           type: string
-          format: date-time
-          nullable: true
-        max_depth:
-          type: integer
-          nullable: true
-        max_nodes:
-          type: integer
-          nullable: true
-
+          title: Entity Id
+        channels:
+          items:
+            type: string
+          type: array
+          title: Channels
+        rationale:
+          type: string
+          title: Rationale
+        expected_delta_c:
+          type: number
+          title: Expected Delta C
+          default: 0.0
+      additionalProperties: false
+      type: object
+      required:
+      - entity_id
+      - rationale
+      title: ProbePlanSchema
     ReachabilityRequest:
-      type: object
-      required: [source_id]
       properties:
         source_id:
           type: string
+          title: Source Id
         as_of:
-          type: string
-          format: date-time
-          nullable: true
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: As Of
         max_depth:
-          type: integer
-          nullable: true
-
-    RunbookAction:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Max Depth
       type: object
-      required: [stage, description]
+      required:
+      - source_id
+      title: ReachabilityRequest
+    ReadinessResponse:
+      properties:
+        status:
+          type: string
+          title: Status
+        database:
+          type: string
+          title: Database
+        redis:
+          type: string
+          title: Redis
+      additionalProperties: false
+      type: object
+      required:
+      - status
+      - database
+      - redis
+      title: ReadinessResponse
+    RunbookActionSchema:
       properties:
         stage:
           type: string
+          title: Stage
         description:
           type: string
+          title: Description
         entity_id:
-          type: string
-          nullable: true
-
-    DecisionRationale:
-      type: object
-      required: [summary]
-      properties:
-        summary:
-          type: string
-        details:
-          type: array
-          items:
-            type: string
-        reason_codes:
-          type: array
-          items:
-            type: string
-        blast_radius:
-          type: object
-          additionalProperties: true
-        coverage_breakdown:
-          type: object
-          additionalProperties: true
-        suggested_runbook:
-          type: array
-          items:
-            $ref: '#/components/schemas/RunbookAction'
-
-    DecisionReport:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Entity Id
+      additionalProperties: false
       type: object
       required:
-        - decision_id
-        - entity_id
-        - verdict
-        - coverage
-        - rationale
-        - limitations_footer
-        - as_of
-        - engine_version
-      properties:
-        decision_id:
-          type: string
-        entity_id:
-          type: string
-        verdict:
-          type: string
-          enum: [UNSAFE, SAFE, INDETERMINATE]
-        coverage:
-          type: number
-        truncated:
-          type: boolean
-        reason_codes:
-          type: array
-          items:
-            type: string
-        rationale:
-          $ref: '#/components/schemas/DecisionRationale'
-        limitations_footer:
-          type: string
-        as_of:
-          type: string
-          format: date-time
-        engine_version:
-          type: string
-        change_type:
-          type: string
-          nullable: true
-        supersedes:
-          type: string
-          nullable: true
-        superseded_by:
-          type: string
-          nullable: true
-        created_by:
-          type: string
-          nullable: true
-        created_at:
-          type: string
-          format: date-time
-          nullable: true
-        paths:
-          type: array
-          items:
-            type: object
-            additionalProperties: true
-
-    DecisionEvaluateRequest:
-      type: object
-      required: [entity_id]
-      properties:
-        entity_id:
-          type: string
-        as_of:
-          type: string
-          format: date-time
-          nullable: true
-        change_type:
-          type: string
-          nullable: true
-
-    DecisionListResponse:
-      type: object
-      required: [items, page]
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/DecisionReport'
-        page:
-          $ref: '#/components/schemas/PageMeta'
-
-    CoverageEstimate:
-      type: object
-      required: [coverage, observed_entities, total_entities, meets_threshold, c_min]
-      properties:
-        coverage:
-          type: number
-        observed_entities:
-          type: integer
-        total_entities:
-          type: integer
-        suppressed_channels:
-          type: array
-          items:
-            type: string
-        meets_threshold:
-          type: boolean
-        c_min:
-          type: number
-        as_of:
-          type: string
-          format: date-time
-          nullable: true
-
-    CoverageSnapshotResponse:
-      type: object
-      required: [snapshot_id, coverage, observed_entities, total_entities, captured_at]
-      properties:
-        snapshot_id:
-          type: string
-        coverage:
-          type: number
-        observed_entities:
-          type: integer
-        total_entities:
-          type: integer
-        suppressed_channels:
-          type: array
-          items:
-            type: string
-        scope:
-          type: string
-          nullable: true
-        captured_at:
-          type: string
-          format: date-time
-
+      - stage
+      - description
+      title: RunbookActionSchema
     SnapshotListResponse:
-      type: object
-      required: [items, page]
       properties:
         items:
-          type: array
           items:
             $ref: '#/components/schemas/CoverageSnapshotResponse'
+          type: array
+          title: Items
         page:
           $ref: '#/components/schemas/PageMeta'
-
-    CalibrationProfile:
       type: object
+      required:
+      - items
+      - page
+      title: SnapshotListResponse
+    ValidationError:
       properties:
-        theta_c:
-          type: number
-        theta_p:
-          type: number
-        c_min:
-          type: number
-        confirmed_requires_direct_evidence:
-          type: boolean
-        min_trace_observations_for_confirmed:
-          type: integer
-
-    BenchmarkRunCreate:
-      type: object
-      properties:
-        config:
-          type: object
-          additionalProperties: true
-
-    BenchmarkRunResponse:
-      type: object
-      required: [run_id, status]
-      properties:
-        run_id:
-          type: string
-        status:
-          type: string
-        config:
-          type: object
-          additionalProperties: true
-        started_at:
-          type: string
-          format: date-time
-          nullable: true
-        completed_at:
-          type: string
-          format: date-time
-          nullable: true
-        created_at:
-          type: string
-          format: date-time
-          nullable: true
-
-    BenchmarkResultResponse:
-      type: object
-      required: [result_id, run_id, loss, method, metrics]
-      properties:
-        result_id:
-          type: string
-        run_id:
-          type: string
-        loss:
-          type: number
-        method:
-          type: string
-        metrics:
-          type: object
-          additionalProperties: true
-        data_class:
-          type: string
-        created_at:
-          type: string
-          format: date-time
-          nullable: true
-
-    BenchmarkResultsEnvelope:
-      type: object
-      required: [run, results]
-      properties:
-        run:
-          $ref: '#/components/schemas/BenchmarkRunResponse'
-        results:
-          type: array
+        loc:
           items:
-            $ref: '#/components/schemas/BenchmarkResultResponse'
-        data_class:
-          type: string
-
-    BenchmarkRunListResponse:
-      type: object
-      required: [items, page]
-      properties:
-        items:
+            anyOf:
+            - type: string
+            - type: integer
           type: array
-          items:
-            $ref: '#/components/schemas/BenchmarkRunResponse'
-        page:
-          $ref: '#/components/schemas/PageMeta'
-
-    AuditEntry:
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+        input:
+          title: Input
+        ctx:
+          type: object
+          title: Context
       type: object
-      properties:
-        audit_id:
-          type: string
-        principal_id:
-          type: string
-        action:
-          type: string
-        resource_type:
-          type: string
-        resource_id:
-          type: string
-        created_at:
-          type: string
-          format: date-time
-
-    AuditListResponse:
-      type: object
-      required: [items, page]
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/AuditEntry'
-        page:
-          $ref: '#/components/schemas/PageMeta'
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError
+    VerdictSchema:
+      type: string
+      enum:
+      - UNSAFE
+      - SAFE
+      - INDETERMINATE
+      title: VerdictSchema

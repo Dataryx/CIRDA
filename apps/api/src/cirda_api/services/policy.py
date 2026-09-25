@@ -16,5 +16,6 @@ def build_policy(settings: Settings) -> PolicyConfig:
         max_ingest_lag_seconds=settings.max_ingest_lag_seconds,
         critical_threshold=settings.critical_threshold,
         probe_planning_enabled=settings.probe_planning_enabled,
+        probe_execution_enabled=settings.probe_execution_enabled,
         hard_blocks=settings.hard_block_set,
     )

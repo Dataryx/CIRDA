@@ -27,3 +27,25 @@ export function rerunDecision(decisionId: string): Promise<DecisionReport> {
     method: 'POST',
   });
 }
+
+export interface ProbeApplyRequest {
+  entity_id: string;
+  channels: string[];
+  as_of?: string | null;
+}
+
+export interface ProbeApplyResult {
+  entity_id: string;
+  channels: string[];
+  mode: string;
+  coverage_before: number;
+  coverage_after: number;
+  expected_delta_c: number;
+  actual_delta_c: number;
+  suppressed_channels_after: string[];
+  as_of?: string | null;
+}
+
+export function applyProbes(body: ProbeApplyRequest): Promise<ProbeApplyResult> {
+  return apiRequest<ProbeApplyResult>('/api/v1/decisions/probes/apply', { method: 'POST', body });
+}

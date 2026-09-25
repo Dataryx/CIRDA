@@ -1,5 +1,11 @@
-import { useQuery } from '@tanstack/react-query';
-import { fetchEdge, fetchEdgeEvidence, fetchEdges } from '@/api/endpoints/edges';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  fetchEdge,
+  fetchEdgeEvidence,
+  fetchEdges,
+  fetchNecessitySuggestions,
+  patchEdgeNecessity,
+} from '@/api/endpoints/edges';
 import { queryKeys } from '@/api/query-keys';
 
 export function useEdges(params: {
@@ -28,5 +34,28 @@ export function useEdgeEvidence(edgeId: string) {
     queryKey: queryKeys.edges.evidence(edgeId),
     queryFn: () => fetchEdgeEvidence(edgeId),
     enabled: Boolean(edgeId),
+  });
+}
+
+export function useNecessitySuggestions(sourceId: string) {
+  return useQuery({
+    queryKey: queryKeys.edges.necessitySuggestions(sourceId),
+    queryFn: () => fetchNecessitySuggestions(sourceId),
+    enabled: Boolean(sourceId),
+  });
+}
+
+export function usePatchEdgeNecessity() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ edgeId, necessity }: { edgeId: string; necessity: string }) =>
+      patchEdgeNecessity(edgeId, necessity),
+    onSuccess: (data) => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.edges.detail(data.edge_id) });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.edges.necessitySuggestions(data.source_id),
+      });
+      void queryClient.invalidateQueries({ queryKey: ['edges'] });
+    },
   });
 }

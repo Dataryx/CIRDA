@@ -34,7 +34,7 @@ def compute_blast_radius(
     Never uses confirmed layer graph for reachability.
     """
     all_result: ReachabilityResult = descendants_within_depth(
-        possible_graph, source_id, max_depth, max_nodes
+        possible_graph, source_id, max_depth, max_nodes, load_bearing_only=False
     )
     crit_result = critical_descendants(
         possible_graph,
@@ -42,6 +42,7 @@ def compute_blast_radius(
         criticality_threshold,
         max_depth,
         max_nodes,
+        load_bearing_only=True,
     )
     return BlastRadius(
         source_id=source_id,

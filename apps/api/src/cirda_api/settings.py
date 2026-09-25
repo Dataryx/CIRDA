@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     critical_threshold: Criticality = Criticality.HIGH
     hard_blocks: str = ""
     probe_planning_enabled: bool = False
+    probe_execution_enabled: bool = False
 
     auth_mode: Literal["dev", "jwt", "api_key"] = "dev"
     jwt_secret: str = "dev-secret-change-me"

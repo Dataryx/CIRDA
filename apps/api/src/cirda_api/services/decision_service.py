@@ -8,7 +8,7 @@ from typing import Any
 
 from cirda_core.decision.explanation import explain_decision
 from cirda_core.decision.gate import evaluate_gate_from_layers
-from cirda_core.decision.probe_planner import plan_probes
+from cirda_core.decision.probe_planner import estimate_probe_delta_c, plan_probes
 from cirda_core.domain.enums import EvidenceChannel, GraphLayer, Verdict
 from cirda_core.version import ENGINE_VERSION
 
@@ -48,7 +48,7 @@ class DecisionService:
         policy = build_policy(self.settings)
         g_c = await self.graph_service.build_digraph(GraphLayer.CONFIRMED, as_of=as_of)
         g_p = await self.graph_service.build_digraph(GraphLayer.POSSIBLE, as_of=as_of)
-        coverage_est = await self.coverage_service.estimate(
+        coverage_est, coverage_inputs = await self.coverage_service.estimate_with_inputs(
             as_of=as_of,
             scope_entity_id=entity_id,
         )
@@ -80,8 +80,14 @@ class DecisionService:
                     "entity_id": plan.entity_id,
                     "channels": [ch.value for ch in plan.channels],
                     "rationale": plan.rationale,
+                    "expected_delta_c": plan.expected_delta_c,
                 }
-                for plan in plan_probes(entity_id, missing, policy)
+                for plan in plan_probes(
+                    entity_id,
+                    missing,
+                    policy,
+                    coverage_inputs=coverage_inputs,
+                )
             ]
         decision_id = str(uuid.uuid4())
         record = {
@@ -114,6 +120,56 @@ class DecisionService:
             except ValueError:
                 continue
         return channels
+
+    async def apply_probes(
+        self,
+        entity_id: str,
+        channels: list[str],
+        *,
+        as_of: datetime | None = None,
+    ) -> dict[str, Any]:
+        """
+        Apply planned probes by lifting channel suppression (not live collectors).
+
+        Requires probe_planning_enabled and probe_execution_enabled.
+        """
+        if not self.settings.probe_execution_enabled:
+            raise PermissionError("probe execution is disabled")
+        if not self.settings.probe_planning_enabled:
+            raise PermissionError("probe planning must be enabled to apply probes")
+        if not channels:
+            raise ValueError("channels must be non-empty")
+
+        parsed: list[EvidenceChannel] = []
+        for raw in channels:
+            try:
+                parsed.append(EvidenceChannel(str(raw)))
+            except ValueError as exc:
+                raise ValueError(f"unknown evidence channel: {raw}") from exc
+
+        as_of = as_of or datetime.now(timezone.utc)
+        before, inputs = await self.coverage_service.estimate_with_inputs(
+            as_of=as_of,
+            scope_entity_id=entity_id,
+        )
+        expected = estimate_probe_delta_c(inputs, frozenset(parsed))
+        await self.coverage_service.restore_channels_for_probe(entity_id, parsed)
+        after, _ = await self.coverage_service.estimate_with_inputs(
+            as_of=as_of,
+            scope_entity_id=entity_id,
+        )
+        actual = float(after["coverage"]) - float(before["coverage"])
+        return {
+            "entity_id": entity_id,
+            "channels": [ch.value for ch in parsed],
+            "mode": "suppression_lift",
+            "coverage_before": before["coverage"],
+            "coverage_after": after["coverage"],
+            "expected_delta_c": round(expected, 6),
+            "actual_delta_c": round(actual, 6),
+            "suppressed_channels_after": after["suppressed_channels"],
+            "as_of": as_of,
+        }
 
     async def rerun(self, decision_id: str, *, created_by: str | None = None) -> dict[str, Any]:
         prior = await self.decision_repo.get(decision_id)

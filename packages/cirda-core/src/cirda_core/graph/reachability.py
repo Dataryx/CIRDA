@@ -1,4 +1,4 @@
-"""Graph reachability with bounds."""
+"""Graph reachability with bounds and optional necessity filtering."""
 
 from __future__ import annotations
 
@@ -6,7 +6,25 @@ from dataclasses import dataclass
 
 import networkx as nx
 
-from cirda_core.domain.enums import Criticality
+from cirda_core.domain.enums import Criticality, Necessity
+
+# Operator-annotated edges that remain load-bearing for critical gate/blast.
+# UNKNOWN is treated as load-bearing (safe default when unset).
+LOAD_BEARING_NECESSITIES: frozenset[str] = frozenset(
+    {
+        Necessity.REQUIRED.value,
+        Necessity.UNKNOWN.value,
+        Necessity.FALLBACK.value,
+    }
+)
+
+# Skipped only when traversing for critical impact (optional/redundant paths).
+NON_CRITICAL_NECESSITIES: frozenset[str] = frozenset(
+    {
+        Necessity.OPTIONAL.value,
+        Necessity.REDUNDANT.value,
+    }
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -19,14 +37,34 @@ class ReachabilityResult:
     max_depth_reached: int
 
 
+def _edge_necessity(graph: nx.DiGraph, source: str, target: str) -> str:
+    data = graph.edges[source, target]
+    raw = data.get("necessity")
+    if raw is None:
+        edge = data.get("edge")
+        if edge is not None and hasattr(edge, "necessity"):
+            return str(edge.necessity.value if hasattr(edge.necessity, "value") else edge.necessity)
+        return Necessity.UNKNOWN.value
+    return str(raw)
+
+
+def _is_load_bearing(graph: nx.DiGraph, source: str, target: str) -> bool:
+    return _edge_necessity(graph, source, target) in LOAD_BEARING_NECESSITIES
+
+
 def descendants_within_depth(
     graph: nx.DiGraph,
     source: str,
     max_depth: int | None = None,
     max_nodes: int | None = None,
+    *,
+    load_bearing_only: bool = False,
 ) -> ReachabilityResult:
     """
     Traverse descendants from source with optional depth and node caps.
+
+    When load_bearing_only=True, skip optional/redundant edges (necessity-aware
+    critical traversal). Missing necessity is treated as unknown (= load-bearing).
 
     Returns truncated=True if caps were hit before full exploration.
     """
@@ -56,6 +94,8 @@ def descendants_within_depth(
             continue
 
         for successor in graph.successors(node):
+            if load_bearing_only and not _is_load_bearing(graph, node, successor):
+                continue
             if successor in visited:
                 continue
             if max_nodes is not None and len(visited) >= max_nodes:
@@ -83,9 +123,17 @@ def critical_descendants(
     criticality_threshold: Criticality = Criticality.HIGH,
     max_depth: int | None = None,
     max_nodes: int | None = None,
+    *,
+    load_bearing_only: bool = True,
 ) -> ReachabilityResult:
-    """Find critical descendants reachable from source."""
-    result = descendants_within_depth(graph, source, max_depth, max_nodes)
+    """Find critical descendants reachable via load-bearing edges by default."""
+    result = descendants_within_depth(
+        graph,
+        source,
+        max_depth,
+        max_nodes,
+        load_bearing_only=load_bearing_only,
+    )
     critical_levels = _criticality_at_or_above(criticality_threshold)
     critical = frozenset(
         node

@@ -79,7 +79,7 @@ def build_container(settings: Settings, session: AsyncSession | None = None) -> 
 
     entity_service = EntityService(entity_repo)
     evidence_service = EvidenceService(evidence_repo)
-    edge_service = EdgeService(edge_repo, evidence_repo)
+    edge_service = EdgeService(edge_repo, evidence_repo, entity_repo, settings)
     graph_service = GraphService(entity_repo, edge_repo)
     coverage_service = CoverageService(entity_repo, evidence_repo, coverage_repo, settings)
     ingest_service = IngestService(evidence_repo, edge_repo, entity_repo, policy, publisher)

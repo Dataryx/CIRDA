@@ -97,7 +97,12 @@ class EdgeRepository(RepositoryBase):
         if existing:
             existing.layer = edge.layer.value
             existing.confidence = edge.confidence
-            existing.necessity = edge.necessity.value
+            # Preserve operator annotations when fusion still reports unknown.
+            if not (
+                existing.necessity != Necessity.UNKNOWN.value
+                and edge.necessity == Necessity.UNKNOWN
+            ):
+                existing.necessity = edge.necessity.value
             existing.evidence_count = edge.evidence_count
             existing.updated_at = now
             row = existing
@@ -123,6 +128,33 @@ class EdgeRepository(RepositoryBase):
             snapshot={"source_id": edge.source_id, "target_id": edge.target_id},
             valid_from=vf,
             created_at=now,
+        )
+        self.session.add(version)
+        await self.session.commit()
+        return self._model_dict(row)
+
+    async def update_necessity(self, edge_id: str, necessity: Necessity) -> dict[str, Any] | None:
+        if self.memory:
+            return self.memory.update_edge_necessity(edge_id, necessity.value)
+
+        assert self.session is not None
+        row = await self.session.get(EdgeModel, edge_id)
+        if not row:
+            return None
+        row.necessity = necessity.value
+        row.updated_at = utcnow()
+        version = EdgeVersion(
+            edge_id=edge_id,
+            layer=row.layer,
+            confidence=row.confidence,
+            snapshot={
+                "source_id": row.source_id,
+                "target_id": row.target_id,
+                "necessity": necessity.value,
+                "kind": "necessity_annotation",
+            },
+            valid_from=utcnow(),
+            created_at=utcnow(),
         )
         self.session.add(version)
         await self.session.commit()

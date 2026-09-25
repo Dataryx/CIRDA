@@ -12,6 +12,8 @@ export const queryKeys = {
     detail: (edgeId: string, params?: Record<string, unknown>) =>
       ['edges', 'detail', edgeId, params ?? {}] as const,
     evidence: (edgeId: string) => ['edges', 'evidence', edgeId] as const,
+    necessitySuggestions: (sourceId: string) =>
+      ['edges', 'necessitySuggestions', sourceId] as const,
   },
   evidence: {
     list: (params: Record<string, unknown>) => ['evidence', 'list', params] as const,

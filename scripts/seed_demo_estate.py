@@ -278,6 +278,13 @@ class HttpSeeder:
         if response.status_code not in (200, 201):
             print(f"  WARN channel-health {payload.get('channel')}: {response.status_code}")
 
+    def patch_edge_necessity(self, edge_id: str, necessity: str) -> None:
+        response = self.client.patch(f"/api/v1/edges/{edge_id}", json={"necessity": necessity})
+        if response.status_code != 200:
+            print(f"  WARN edge necessity {edge_id}: {response.status_code} {response.text[:120]}")
+        else:
+            print(f"  necessity: {edge_id} -> {necessity}")
+
 
 def seed_entities_and_events(seeder: HttpSeeder) -> None:
     print("==> Seeding entities")
@@ -323,6 +330,13 @@ def seed_entities_and_events(seeder: HttpSeeder) -> None:
             "suppression_suspected": False,
             "details": {},
         }
+    )
+    print("==> Annotating optional necessity (demo load-bearing vs optional path)")
+    # WRITES is retained: invoice→ledger stays load-bearing (UNSAFE).
+    # Mark a secondary retained edge optional so critical blast skips it.
+    seeder.patch_edge_necessity(
+        "invoice-reconciler-agent->invoice-queue:publishes",
+        "optional",
     )
     print("Evaluate decisions in the UI or via POST /api/v1/decisions/evaluate")
 
@@ -406,6 +420,13 @@ def seed_via_direct(*, force_events: bool) -> None:
             lag_seconds=12,
             suppression_suspected=False,
         )
+        # Optional secondary path: critical blast still uses ledger; queue edge ignored.
+        annotated = await container.edge_service.update_necessity(
+            "invoice-reconciler-agent->invoice-queue:publishes",
+            "optional",
+        )
+        if annotated:
+            print("==> Necessity: invoice-reconciler-agent->invoice-queue:publishes -> optional")
         print(f"==> Direct seed complete. {created} new events.")
         print("==> Channel health: database+messaging suppression for vendor-risk narrative.")
 

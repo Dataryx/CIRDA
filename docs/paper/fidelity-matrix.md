@@ -17,6 +17,11 @@ Mapping of CIRDA paper claims to code paths and test identifiers. PDF not includ
 | Scalability shape (graph size) | `cirda_bench.scalability` | `test_scalability_shape.py` |
 | Decision explanation / runbook | `cirda_core.decision.explanation`, `runbook.py` | `apps/api/tests/unit/test_decision_service.py` |
 | Probe planning for INDETERMINATE | `cirda_core.decision.probe_planner`, wired in `decision_service.py` | `test_probe_planner.py`, `test_decision_flow.py` |
+| Probe expected ΔC | `estimate_probe_delta_c` (restore suppressed channel → re-estimate C) | `test_probe_planner.py` |
+| Probe apply (suppression lift) | `POST /decisions/probes/apply`; `CoverageService.restore_channels_for_probe` | `test_decision_flow.py` |
+| Necessity-aware critical traversal | `reachability.py` load-bearing filter; gate/blast | `test_necessity_load_bearing.py` |
+| Operator necessity annotation | `PATCH /api/v1/edges/{edge_id}`; preserved on re-ingest | `test_edge_necessity.py` |
+| Necessity suggestions (suggest-only) | `necessity_suggester.py`; `GET /edges/necessity-suggestions` | `test_necessity_suggester.py`, `test_necessity_suggestions.py` |
 | Calibrated support S as probability | N/A — documented limitation | README limitations section |
 | Distributed graph partition | N/A — single-tenant Postgres | ADR 0003 |
 
@@ -24,7 +29,8 @@ Mapping of CIRDA paper claims to code paths and test identifiers. PDF not includ
 
 | Area | Gap | Mitigation |
 |------|-----|------------|
-| Probe planning | Coverage-gap probes only (no ΔC / execution) | `CIRDA_PROBE_PLANNING_ENABLED` (off by default) |
+| Probe planning | Apply lifts suppression + reports actual vs expected ΔC; no live collector execution | `CIRDA_PROBE_PLANNING_ENABLED` + `CIRDA_PROBE_EXECUTION_ENABLED` (off by default) |
+| Necessity models | Suggest-only heuristics + operator PATCH (no auto-mutate) | UNKNOWN ≡ load-bearing; optional/redundant skipped; demo seeds invoice→invoice-queue as optional |
 | Weak signal weights | Heuristic vs full calibration | `calibration-guide.md` |
 | Causal inference | Support ≠ causation | Limitations footer on every report |
 

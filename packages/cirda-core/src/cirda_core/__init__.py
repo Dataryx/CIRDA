@@ -10,9 +10,10 @@ from cirda_core.coverage.benchmark_estimator import benchmark_coverage
 from cirda_core.coverage.estimator import estimate_coverage, meets_coverage_threshold
 from cirda_core.decision.explanation import explain_decision
 from cirda_core.decision.gate import evaluate_gate, evaluate_gate_from_layers
-from cirda_core.decision.probe_planner import ProbePlan, plan_probes
+from cirda_core.decision.probe_planner import ProbePlan, estimate_probe_delta_c, plan_probes
 from cirda_core.decision.runbook import STANDARD_RUNBOOK, default_runbook_for_verdict
 from cirda_core.graph.layers import classify_layer
+from cirda_core.graph.necessity_suggester import NecessityHint, suggest_necessity
 from cirda_core.graph.reachability import ReachabilityResult, critical_descendants, descendants_within_depth
 from cirda_core.graph.snapshot import GraphSnapshot
 from cirda_core.graph.temporal_graph import TemporalGraph
@@ -37,6 +38,7 @@ __all__ = [
     "EntityResolver",
     "GraphSnapshot",
     "HALF_LIFE",
+    "NecessityHint",
     "Normalizer",
     "PolicyConfig",
     "ProbePlan",
@@ -57,6 +59,7 @@ __all__ = [
     "descendants_within_depth",
     "domain",
     "estimate_coverage",
+    "estimate_probe_delta_c",
     "evaluate_gate",
     "evaluate_gate_from_layers",
     "explain_decision",
@@ -66,6 +69,7 @@ __all__ = [
     "has_direct_evidence",
     "meets_coverage_threshold",
     "plan_probes",
+    "suggest_necessity",
     "translate_to_dependency_edge",
     "validate_calibration",
     "weak_only_observations",

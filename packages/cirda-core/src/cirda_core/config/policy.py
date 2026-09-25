@@ -20,6 +20,7 @@ class PolicyConfig:
     max_ingest_lag_seconds: float = 3600.0
     critical_threshold: Criticality = Criticality.HIGH
     probe_planning_enabled: bool = False
+    probe_execution_enabled: bool = False
     hard_blocks: frozenset[str] = field(default_factory=frozenset)
 
     def __post_init__(self) -> None:

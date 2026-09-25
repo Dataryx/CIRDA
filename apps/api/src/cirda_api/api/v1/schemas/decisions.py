@@ -20,6 +20,25 @@ class ProbePlanSchema(ApiModel):
     entity_id: str
     channels: list[str] = Field(default_factory=list)
     rationale: str
+    expected_delta_c: float = 0.0
+
+
+class ProbeApplyRequest(ApiModel):
+    entity_id: str
+    channels: list[str] = Field(min_length=1)
+    as_of: datetime | None = None
+
+
+class ProbeApplyResult(ApiModel):
+    entity_id: str
+    channels: list[str]
+    mode: str = "suppression_lift"
+    coverage_before: float
+    coverage_after: float
+    expected_delta_c: float
+    actual_delta_c: float
+    suppressed_channels_after: list[str] = Field(default_factory=list)
+    as_of: datetime | None = None
 
 
 class DecisionRationale(ApiModel):

@@ -34,6 +34,7 @@ def build_digraph(
             confidence=edge.confidence,
             relation=edge.relation.value,
             layer=edge.layer.value,
+            necessity=edge.necessity.value,
         )
     return graph
 

@@ -23,7 +23,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Known Limitations
 
 - Paper fidelity is partial; see [docs/paper/fidelity-matrix.md](docs/paper/fidelity-matrix.md)
-- Probe planning is stubbed (`CIRDA_PROBE_PLANNING_ENABLED=false` by default)
+- Probe planning (coverage-gap + expected ΔC) is flag-gated (`CIRDA_PROBE_PLANNING_ENABLED=false` by default)
+- Probe apply lifts channel suppression only (`CIRDA_PROBE_EXECUTION_ENABLED`); live collector execution is not implemented
+- Necessity is operator-annotated (`PATCH /api/v1/edges/{id}`) with suggest-only heuristics (`GET /edges/necessity-suggestions`); auto-mutate inference is not implemented
 - Kafka ingest path requires Redpanda/Kafka in full stack; lite mode uses in-memory bus
 - E2E tests require Docker and Playwright browser install
 

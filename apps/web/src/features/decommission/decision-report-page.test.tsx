@@ -17,5 +17,9 @@ describe('DecisionReportPage', () => {
     });
     expect(screen.getByLabelText('Decision limitations')).toBeInTheDocument();
     expect(screen.getByText(/Limitations \(§X\)/)).toBeInTheDocument();
+    expect(screen.getByText('Suggested probes')).toBeInTheDocument();
+    expect(screen.getByText('Expected ΔC')).toBeInTheDocument();
+    expect(screen.getByText('+0.112')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Apply' })).toBeInTheDocument();
   });
 });
