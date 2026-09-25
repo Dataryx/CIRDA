@@ -8,7 +8,8 @@ from typing import Any
 
 from cirda_core.decision.explanation import explain_decision
 from cirda_core.decision.gate import evaluate_gate_from_layers
-from cirda_core.domain.enums import GraphLayer, Verdict
+from cirda_core.decision.probe_planner import plan_probes
+from cirda_core.domain.enums import EvidenceChannel, GraphLayer, Verdict
 from cirda_core.version import ENGINE_VERSION
 
 from cirda_api.db.repositories.decision import DecisionRepository
@@ -60,7 +61,7 @@ class DecisionService:
         )
         explanation = explain_decision(gate, entity_id)
         blast = await self._blast_summary(entity_id, as_of=as_of)
-        rationale = {
+        rationale: dict[str, Any] = {
             "summary": explanation.summary,
             "details": list(explanation.details),
             "reason_codes": sorted(gate.reason_codes),
@@ -70,7 +71,18 @@ class DecisionService:
                 {"stage": a.stage.value, "description": a.description, "entity_id": a.entity_id}
                 for a in explanation.suggested_runbook
             ],
+            "suggested_probes": [],
         }
+        if gate.verdict == Verdict.INDETERMINATE:
+            missing = self._missing_channels(coverage_est)
+            rationale["suggested_probes"] = [
+                {
+                    "entity_id": plan.entity_id,
+                    "channels": [ch.value for ch in plan.channels],
+                    "rationale": plan.rationale,
+                }
+                for plan in plan_probes(entity_id, missing, policy)
+            ]
         decision_id = str(uuid.uuid4())
         record = {
             "decision_id": decision_id,
@@ -91,6 +103,17 @@ class DecisionService:
         if supersedes_id:
             await self.decision_repo.mark_superseded(supersedes_id, decision_id)
         return self._to_response(stored)
+
+    @staticmethod
+    def _missing_channels(coverage_est: dict[str, Any]) -> list[EvidenceChannel]:
+        raw = coverage_est.get("suppressed_channels") or []
+        channels: list[EvidenceChannel] = []
+        for item in raw:
+            try:
+                channels.append(EvidenceChannel(str(item)))
+            except ValueError:
+                continue
+        return channels
 
     async def rerun(self, decision_id: str, *, created_by: str | None = None) -> dict[str, Any]:
         prior = await self.decision_repo.get(decision_id)

@@ -16,6 +16,12 @@ class RunbookActionSchema(ApiModel):
     entity_id: str | None = None
 
 
+class ProbePlanSchema(ApiModel):
+    entity_id: str
+    channels: list[str] = Field(default_factory=list)
+    rationale: str
+
+
 class DecisionRationale(ApiModel):
     summary: str
     details: list[str] = Field(default_factory=list)
@@ -23,6 +29,7 @@ class DecisionRationale(ApiModel):
     blast_radius: dict[str, Any] = Field(default_factory=dict)
     coverage_breakdown: dict[str, Any] = Field(default_factory=dict)
     suggested_runbook: list[RunbookActionSchema] = Field(default_factory=list)
+    suggested_probes: list[ProbePlanSchema] = Field(default_factory=list)
 
 
 class DecisionReport(ApiModel):

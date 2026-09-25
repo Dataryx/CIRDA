@@ -94,8 +94,7 @@ CIRDA `false_safe=0` at high loss and several metric cells land within tolerance
 remaining cells are tracked as explicit `xfail` gaps in
 [`packages/cirda-bench/CALIBRATION.md`](packages/cirda-bench/CALIBRATION.md).
 
-**Roadmap hooks (flagged off by default):** static declared evidence, probe planner,
-necessity models, multi-tenant aggregation.
+**Roadmap hooks (flagged off by default):** probe planner execution/ΔC (coverage-gap probes are wired when `CIRDA_PROBE_PLANNING_ENABLED=true`), necessity models, multi-tenant aggregation.
 
 See [docs/paper/fidelity-matrix.md](docs/paper/fidelity-matrix.md) for claim → code → test mapping.
 

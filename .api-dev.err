@@ -2240,3 +2240,4 @@ INFO:sqlalchemy.engine.Engine:CREATE INDEX ix_edge_versions_edge_id ON edge_vers
 INFO:sqlalchemy.engine.Engine:[no key 0.00031s] ()
 INFO:sqlalchemy.engine.Engine:COMMIT
 INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'src\cirda_api\api\v1\schemas\decisions.py', 'src\cirda_api\services\decision_service.py'. Reloading...

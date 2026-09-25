@@ -16,7 +16,7 @@ Mapping of CIRDA paper claims to code paths and test identifiers. PDF not includ
 | Table II benchmark shape | `cirda_bench.generator` | `test_reproduces_table_ii.py` |
 | Scalability shape (graph size) | `cirda_bench.scalability` | `test_scalability_shape.py` |
 | Decision explanation / runbook | `cirda_core.decision.explanation`, `runbook.py` | `apps/api/tests/unit/test_decision_service.py` |
-| Probe planning for INDETERMINATE | `cirda_core.decision.probe_planner` | **Not implemented** (stub, disabled) |
+| Probe planning for INDETERMINATE | `cirda_core.decision.probe_planner`, wired in `decision_service.py` | `test_probe_planner.py`, `test_decision_flow.py` |
 | Calibrated support S as probability | N/A — documented limitation | README limitations section |
 | Distributed graph partition | N/A — single-tenant Postgres | ADR 0003 |
 
@@ -24,7 +24,7 @@ Mapping of CIRDA paper claims to code paths and test identifiers. PDF not includ
 
 | Area | Gap | Mitigation |
 |------|-----|------------|
-| Probe planning | Stub only | `CIRDA_PROBE_PLANNING_ENABLED=false` |
+| Probe planning | Coverage-gap probes only (no ΔC / execution) | `CIRDA_PROBE_PLANNING_ENABLED` (off by default) |
 | Weak signal weights | Heuristic vs full calibration | `calibration-guide.md` |
 | Causal inference | Support ≠ causation | Limitations footer on every report |
 

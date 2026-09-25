@@ -7,11 +7,8 @@ from cirda_core.domain.edge import DependencyEdge
 from cirda_core.domain.entity import Entity
 from cirda_core.domain.enums import ChannelClass, GraphLayer
 
-from cirda_bench.generator.telemetry import (
-    WEAK_UNION_MIN_OBSERVATIONS,
-    TelemetryBundle,
-    to_channel_observations,
-)
+from cirda_bench import calibration as cal
+from cirda_bench.generator.telemetry import TelemetryBundle, to_channel_observations
 from cirda_bench.methods.base import InferenceResult, Method, build_layer_graphs, simple_gate
 
 
@@ -43,7 +40,7 @@ class WeakUnionMethod(Method):
                 if CHANNEL_PROFILES[o.channel].channel_class == ChannelClass.WEAK
             )
 
-            accepted = direct_count > 0 or weak_count >= WEAK_UNION_MIN_OBSERVATIONS
+            accepted = direct_count > 0 or weak_count >= cal.WEAK_UNION_MIN_OBSERVATIONS
             if not accepted:
                 continue
 

@@ -56,7 +56,14 @@ export function createDecisionReport(overrides: Partial<DecisionReport> = {}): D
       },
       coverage_breakdown: createCoverageEstimate(),
       suggested_runbook: [
-        { stage: 'probe', description: 'Run additional observability probes', entity_id: 'svc-billing' },
+        { stage: 'observe_downstream', description: 'Observe downstream impact', entity_id: 'svc-billing' },
+      ],
+      suggested_probes: [
+        {
+          entity_id: 'svc-billing',
+          channels: ['database'],
+          rationale: 'Restore database audit/collector coverage for this entity\'s data dependencies.',
+        },
       ],
     },
     limitations_footer:

@@ -174,6 +174,32 @@ export function DecisionReportPage() {
               )}
             </CardContent>
           </Card>
+
+          {(rationale.suggested_probes?.length ?? 0) > 0 ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Suggested probes</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Channels</TableHead>
+                      <TableHead>Rationale</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {rationale.suggested_probes?.map((probe, index) => (
+                      <TableRow key={`${probe.channels.join('-')}-${index}`}>
+                        <TableCell className="font-medium">{probe.channels.join(', ')}</TableCell>
+                        <TableCell>{probe.rationale}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          ) : null}
         </div>
       ) : null}
 

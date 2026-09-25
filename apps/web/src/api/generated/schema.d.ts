@@ -113,6 +113,12 @@ export interface BlastRadiusSummary {
   layer: string;
 }
 
+export interface ProbePlan {
+  entity_id: string;
+  channels: string[];
+  rationale: string;
+}
+
 export interface DecisionRationale {
   summary: string;
   details: string[];
@@ -120,6 +126,7 @@ export interface DecisionRationale {
   blast_radius: BlastRadiusSummary;
   coverage_breakdown: CoverageEstimate;
   suggested_runbook: RunbookAction[];
+  suggested_probes?: ProbePlan[];
 }
 
 export interface DecisionPath {
