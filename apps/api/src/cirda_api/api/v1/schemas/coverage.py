@@ -16,6 +16,9 @@ class CoverageEstimate(ApiModel):
     suppressed_channels: list[str] = Field(default_factory=list)
     meets_threshold: bool
     c_min: float
+    ingest_lag_seconds: float = 0.0
+    max_ingest_lag_seconds: float | None = None
+    lag_exceeded: bool = False
     as_of: datetime | None = None
     scope_entity_id: str | None = None
     estimator: str = "production"

@@ -1036,6 +1036,102 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/decisions/{decision_id}/runbook:
+    get:
+      tags:
+      - decisions
+      summary: List Runbook
+      operationId: list_runbook_api_v1_decisions__decision_id__runbook_get
+      parameters:
+      - name: decision_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Decision Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunbookExecutionListResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/decisions/{decision_id}/runbook/{execution_id}:
+    patch:
+      tags:
+      - decisions
+      summary: Update Runbook Stage
+      operationId: update_runbook_stage_api_v1_decisions__decision_id__runbook__execution_id__patch
+      parameters:
+      - name: decision_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Decision Id
+      - name: execution_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Execution Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RunbookExecutionUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunbookExecutionSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/v1/decisions/{decision_id}:
     get:
       tags:
@@ -2268,6 +2364,11 @@ components:
             type: object
           type: array
           title: Paths
+        runbook_executions:
+          items:
+            $ref: '#/components/schemas/RunbookExecutionSchema'
+          type: array
+          title: Runbook Executions
       additionalProperties: false
       type: object
       required:
@@ -2922,6 +3023,83 @@ components:
       - stage
       - description
       title: RunbookActionSchema
+    RunbookExecutionListResponse:
+      properties:
+        decision_id:
+          type: string
+          title: Decision Id
+        items:
+          items:
+            $ref: '#/components/schemas/RunbookExecutionSchema'
+          type: array
+          title: Items
+      additionalProperties: false
+      type: object
+      required:
+      - decision_id
+      - items
+      title: RunbookExecutionListResponse
+    RunbookExecutionSchema:
+      properties:
+        execution_id:
+          type: string
+          title: Execution Id
+        stage:
+          type: string
+          title: Stage
+        status:
+          type: string
+          title: Status
+        started_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Started At
+        completed_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Completed At
+        notes:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Notes
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        decision_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Decision Id
+      additionalProperties: false
+      type: object
+      required:
+      - execution_id
+      - stage
+      - status
+      title: RunbookExecutionSchema
+    RunbookExecutionUpdate:
+      properties:
+        status:
+          type: string
+          title: Status
+          description: pending | in_progress | completed
+        notes:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Notes
+      additionalProperties: false
+      type: object
+      required:
+      - status
+      title: RunbookExecutionUpdate
     SnapshotListResponse:
       properties:
         items:

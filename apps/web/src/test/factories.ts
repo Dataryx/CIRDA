@@ -18,6 +18,9 @@ export function createCoverageEstimate(overrides: Partial<CoverageEstimate> = {}
     suppressed_channels: [],
     meets_threshold: true,
     c_min: 0.85,
+    ingest_lag_seconds: 12,
+    max_ingest_lag_seconds: 3600,
+    lag_exceeded: false,
     as_of: '2026-01-15T12:00:00Z',
     ...overrides,
   };
@@ -76,6 +79,13 @@ export function createDecisionReport(overrides: Partial<DecisionReport> = {}): D
         path_nodes: ['svc-billing', 'db-payments'],
         path_confidence: 0.87,
         is_critical_path: true,
+      },
+    ],
+    runbook_executions: [
+      {
+        execution_id: 'rb-001',
+        stage: 'observe_downstream',
+        status: 'pending',
       },
     ],
     ...overrides,

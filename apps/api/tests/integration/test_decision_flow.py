@@ -263,3 +263,99 @@ async def test_decision_evaluate_includes_critical_paths(client: AsyncClient) ->
     assert analysis.status_code == 200
     assert analysis.json()["paths"]
     assert "reachability" not in analysis.json()
+
+
+@pytest.mark.asyncio
+async def test_ingest_lag_blocks_safe_verdict(client: AsyncClient) -> None:
+    """INV-002 wired: channel health lag must prevent SAFE when it exceeds policy."""
+    from datetime import datetime, timezone
+
+    headers_analyst = {"Authorization": "Bearer dev", "X-CIRDA-Role": "analyst"}
+    headers_admin = {"Authorization": "Bearer dev", "X-CIRDA-Role": "admin"}
+    headers_approver = {"Authorization": "Bearer dev", "X-CIRDA-Role": "approver"}
+
+    await client.post(
+        "/api/v1/entities",
+        json={
+            "entity_id": "lag-safe-agent",
+            "entity_type": "agent",
+            "name": "Lag Safe",
+            "criticality": "low",
+        },
+        headers=headers_analyst,
+    )
+    for i in range(10):
+        await client.post(
+            "/api/v1/entities",
+            json={
+                "entity_id": f"lag-pad-{i}",
+                "entity_type": "service",
+                "name": f"Lag Pad {i}",
+                "criticality": "low",
+            },
+            headers=headers_analyst,
+        )
+        await client.post(
+            "/api/v1/ingest/events",
+            json={
+                "raw": {
+                    "source": "trace",
+                    "event_id": f"lag-pad-ev-{i}",
+                    "source_id": f"lag-pad-{i}",
+                    "target_id": f"lag-pad-{(i + 1) % 10}",
+                    "relation": "calls",
+                    "observed_at": datetime.now(timezone.utc).isoformat(),
+                }
+            },
+            headers=headers_analyst,
+        )
+
+    # High lag → INDETERMINATE even with coverage above C_min.
+    lag_up = await client.post(
+        "/api/v1/admin/channel-health",
+        json={
+            "channel": "trace",
+            "health_score": 0.95,
+            "lag_seconds": 14_400,
+            "suppression_suspected": False,
+        },
+        headers=headers_admin,
+    )
+    assert lag_up.status_code == 200
+
+    blocked = await client.post(
+        "/api/v1/decisions/evaluate",
+        json={"entity_id": "lag-safe-agent", "change_type": "retirement"},
+        headers=headers_approver,
+    )
+    assert blocked.status_code == 201
+    blocked_body = blocked.json()
+    assert blocked_body["verdict"] == "INDETERMINATE"
+    assert "ingest_lag_exceeded" in blocked_body["reason_codes"]
+    assert blocked_body["rationale"]["coverage_breakdown"]["lag_exceeded"] is True
+    assert blocked_body["rationale"]["coverage_breakdown"]["ingest_lag_seconds"] == 14_400
+    assert any("14400" in d for d in blocked_body["rationale"]["details"])
+
+    # Clear lag → SAFE (isolated agent, coverage padded).
+    clear = await client.post(
+        "/api/v1/admin/channel-health",
+        json={
+            "channel": "trace",
+            "health_score": 0.95,
+            "lag_seconds": 12,
+            "suppression_suspected": False,
+        },
+        headers=headers_admin,
+    )
+    assert clear.status_code == 200
+
+    cleared = await client.post(
+        "/api/v1/decisions/evaluate",
+        json={"entity_id": "lag-safe-agent", "change_type": "retirement"},
+        headers=headers_approver,
+    )
+    assert cleared.status_code == 201
+    cleared_body = cleared.json()
+    assert cleared_body["verdict"] == "SAFE"
+    assert "ingest_lag_exceeded" not in cleared_body["reason_codes"]
+    assert cleared_body["rationale"]["coverage_breakdown"]["lag_exceeded"] is False

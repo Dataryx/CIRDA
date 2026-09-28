@@ -11,6 +11,9 @@ from cirda_api.api.v1.schemas.decisions import (
     DecisionReport,
     ProbeApplyRequest,
     ProbeApplyResult,
+    RunbookExecutionListResponse,
+    RunbookExecutionSchema,
+    RunbookExecutionUpdate,
 )
 from cirda_api.observability.metrics import DECISIONS
 from cirda_api.security.rbac import RequireApprover, RequireViewer
@@ -91,6 +94,57 @@ async def list_entity_decisions(
         items=[DecisionReport(**i) for i in items],
         page=PageMeta(total=total, offset=offset, limit=limit),
     )
+
+
+@router.get("/{decision_id}/runbook", response_model=RunbookExecutionListResponse)
+async def list_runbook(
+    decision_id: str,
+    container: ContainerDep,
+    _principal: RequireViewer,
+) -> RunbookExecutionListResponse:
+    try:
+        items = await container.decision_service.list_runbook_executions(decision_id)
+    except KeyError as exc:
+        raise HTTPException(404, "Decision not found") from exc
+    return RunbookExecutionListResponse(
+        decision_id=decision_id,
+        items=[RunbookExecutionSchema(**i) for i in items],
+    )
+
+
+@router.patch("/{decision_id}/runbook/{execution_id}", response_model=RunbookExecutionSchema)
+async def update_runbook_stage(
+    decision_id: str,
+    execution_id: str,
+    body: RunbookExecutionUpdate,
+    container: ContainerDep,
+    principal: RequireApprover,
+) -> RunbookExecutionSchema:
+    try:
+        updated = await container.decision_service.update_runbook_execution(
+            decision_id,
+            execution_id,
+            status=body.status,
+            notes=body.notes,
+        )
+    except KeyError as exc:
+        raise HTTPException(404, "Decision not found") from exc
+    except LookupError as exc:
+        raise HTTPException(404, "Runbook execution not found") from exc
+    except ValueError as exc:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(exc)) from exc
+    await container.audit_service.log(
+        principal_id=principal.principal_id,
+        action="runbook.stage_update",
+        resource_type="decision",
+        resource_id=decision_id,
+        details={
+            "execution_id": execution_id,
+            "status": updated["status"],
+            "stage": updated["stage"],
+        },
+    )
+    return RunbookExecutionSchema(**updated)
 
 
 @router.get("/{decision_id}", response_model=DecisionReport)

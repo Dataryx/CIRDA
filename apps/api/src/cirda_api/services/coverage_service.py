@@ -72,10 +72,12 @@ class CoverageService:
             observed.add(ev["target_id"])
 
         suppressed = await self._suppressed_channels(scope_entity_id=scope_entity_id)
+        ingest_lag_seconds = await self._max_ingest_lag_seconds()
         inputs = CoverageInputs(
             total_entity_ids=total_ids,
             observed_entity_ids=frozenset(observed & set(total_ids)),
             suppressed_channels=suppressed,
+            ingest_lag_seconds=ingest_lag_seconds,
         )
         est = estimate_coverage(inputs)
         policy = build_policy(self.settings)
@@ -86,12 +88,22 @@ class CoverageService:
             "suppressed_channels": sorted(est.suppressed_channels),
             "meets_threshold": est.coverage >= policy.c_min,
             "c_min": policy.c_min,
+            "ingest_lag_seconds": ingest_lag_seconds,
+            "max_ingest_lag_seconds": policy.max_ingest_lag_seconds,
+            "lag_exceeded": ingest_lag_seconds > policy.max_ingest_lag_seconds,
             "as_of": as_of,
             "scope_entity_id": scope_entity_id,
             "estimator": "production",
             "label": "estimate",
         }
         return payload, inputs
+
+    async def _max_ingest_lag_seconds(self) -> float:
+        """Estate-wide max channel lag (INV-002 input for the safety gate)."""
+        health = await self.coverage_repo.list_channel_health()
+        if not health:
+            return 0.0
+        return max(float(row.get("lag_seconds") or 0.0) for row in health)
 
     async def _suppressed_channels(
         self, *, scope_entity_id: str | None

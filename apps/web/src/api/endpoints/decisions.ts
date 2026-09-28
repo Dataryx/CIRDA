@@ -49,3 +49,35 @@ export interface ProbeApplyResult {
 export function applyProbes(body: ProbeApplyRequest): Promise<ProbeApplyResult> {
   return apiRequest<ProbeApplyResult>('/api/v1/decisions/probes/apply', { method: 'POST', body });
 }
+
+export interface RunbookExecution {
+  execution_id: string;
+  stage: string;
+  status: string;
+  started_at?: string | null;
+  completed_at?: string | null;
+  notes?: string | null;
+  description?: string | null;
+}
+
+export interface RunbookExecutionListResponse {
+  decision_id: string;
+  items: RunbookExecution[];
+}
+
+export function fetchRunbook(decisionId: string): Promise<RunbookExecutionListResponse> {
+  return apiRequest<RunbookExecutionListResponse>(
+    `/api/v1/decisions/${encodeURIComponent(decisionId)}/runbook`,
+  );
+}
+
+export function updateRunbookStage(
+  decisionId: string,
+  executionId: string,
+  body: { status: string; notes?: string | null },
+): Promise<RunbookExecution> {
+  return apiRequest<RunbookExecution>(
+    `/api/v1/decisions/${encodeURIComponent(decisionId)}/runbook/${encodeURIComponent(executionId)}`,
+    { method: 'PATCH', body },
+  );
+}

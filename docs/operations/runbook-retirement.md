@@ -32,7 +32,19 @@ curl -X POST http://localhost:8000/api/v1/decisions/evaluate \
 
 ### 3. Execute Runbook Stages
 
-Follow `suggested_runbook` in order:
+Follow `runbook_executions` (seeded from `suggested_runbook`) in order. Advance stages via:
+
+```bash
+curl -X PATCH http://localhost:8000/api/v1/decisions/{decision_id}/runbook/{execution_id} \
+  -H "Authorization: Bearer dev" \
+  -H "X-CIRDA-Role: approver" \
+  -H "Content-Type: application/json" \
+  -d '{"status": "in_progress"}'
+```
+
+Statuses: `pending` → `in_progress` → `completed` (or `pending` → `completed`).
+
+Stages in order:
 
 1. **report_and_remediate** — notify owning team
 2. **disable_new_work** — drain queues, disable triggers

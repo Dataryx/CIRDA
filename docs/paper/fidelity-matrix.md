@@ -11,12 +11,14 @@ Mapping of CIRDA paper claims to code paths and test identifiers. PDF not includ
 | Coverage estimation C | `cirda_core.coverage.estimator` | `apps/api/tests/integration/test_coverage.py` |
 | Suppression detection | `cirda_core.coverage.suppression` | `incident-telemetry-suppression.md` scenario |
 | Tri-state gate (UNSAFE/SAFE/INDETERMINATE) | `cirda_core.decision.gate` | `test_zero_false_safe_at_30_45_60_loss.py` |
+| INV-002 ingest lag blocks SAFE | `CoverageService` → `CoverageInputs.ingest_lag_seconds` → gate | `test_INV_002_no_safe_when_ingest_lag_exceeds_policy.py`, `test_decision_flow.py` |
 | Blast radius analysis | `cirda_core.analysis.blast_radius` | `apps/api/tests/integration/test_analysis.py` |
 | Critical path enumeration | `critical_paths.py`; decision `paths`; `GET /analysis/paths` | `test_critical_paths.py`, `test_decision_flow.py` |
 | Zero false-SAFE under observability loss | `cirda_bench` harness | `test_zero_false_safe_at_30_45_60_loss.py` |
 | Table II benchmark shape | `cirda_bench.generator` | `test_reproduces_table_ii.py` |
 | Scalability shape (graph size) | `cirda_bench.scalability` | `test_scalability_shape.py` |
 | Decision explanation / runbook | `cirda_core.decision.explanation`, `runbook.py` | `apps/api/tests/unit/test_decision_service.py` |
+| Runbook execution tracking | Seed on evaluate; `GET/PATCH …/runbook` | `test_runbook.py`, `test_runbook_execution.py` |
 | Probe planning for INDETERMINATE | `cirda_core.decision.probe_planner`, wired in `decision_service.py` | `test_probe_planner.py`, `test_decision_flow.py` |
 | Probe expected ΔC | `estimate_probe_delta_c` (restore suppressed channel → re-estimate C) | `test_probe_planner.py` |
 | Probe apply (suppression lift) | `POST /decisions/probes/apply`; `CoverageService.restore_channels_for_probe` | `test_decision_flow.py` |

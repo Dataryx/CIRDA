@@ -23,5 +23,6 @@ describe('DecisionReportPage', () => {
     expect(screen.getByRole('button', { name: 'Apply' })).toBeInTheDocument();
     expect(screen.getByText('Critical paths (load-bearing)')).toBeInTheDocument();
     expect(screen.getByText('0.870')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Start' })).toBeInTheDocument();
   });
 });

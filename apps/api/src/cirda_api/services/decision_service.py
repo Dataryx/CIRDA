@@ -59,8 +59,14 @@ class DecisionService:
             source_entity_id=entity_id,
             coverage=coverage_est["coverage"],
             policy=policy,
+            ingest_lag_seconds=coverage_inputs.ingest_lag_seconds,
         )
-        explanation = explain_decision(gate, entity_id)
+        explanation = explain_decision(
+            gate,
+            entity_id,
+            ingest_lag_seconds=coverage_inputs.ingest_lag_seconds,
+            max_ingest_lag_seconds=policy.max_ingest_lag_seconds,
+        )
         blast = await self._blast_summary(entity_id, as_of=as_of)
         rationale: dict[str, Any] = {
             "summary": explanation.summary,
@@ -236,4 +242,32 @@ class DecisionService:
             "created_by": row.get("created_by"),
             "created_at": row.get("created_at"),
             "paths": row.get("paths", []),
+            "runbook_executions": row.get("runbook_executions", []),
         }
+
+    async def list_runbook_executions(self, decision_id: str) -> list[dict[str, Any]]:
+        prior = await self.decision_repo.get(decision_id)
+        if not prior:
+            raise KeyError(decision_id)
+        return await self.decision_repo.list_runbook_executions(decision_id)
+
+    async def update_runbook_execution(
+        self,
+        decision_id: str,
+        execution_id: str,
+        *,
+        status: str,
+        notes: str | None = None,
+    ) -> dict[str, Any]:
+        prior = await self.decision_repo.get(decision_id)
+        if not prior:
+            raise KeyError(decision_id)
+        updated = await self.decision_repo.update_runbook_execution(
+            decision_id,
+            execution_id,
+            status=status,
+            notes=notes,
+        )
+        if not updated:
+            raise LookupError(execution_id)
+        return updated

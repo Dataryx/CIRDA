@@ -22,3 +22,4 @@ def test_INV_002_no_safe_when_ingest_lag_exceeds_policy() -> None:
     )
     assert decision.verdict != Verdict.SAFE
     assert decision.verdict == Verdict.INDETERMINATE
+    assert "ingest_lag_exceeded" in decision.reason_codes

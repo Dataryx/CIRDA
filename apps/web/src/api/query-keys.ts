@@ -23,6 +23,7 @@ export const queryKeys = {
     detail: (decisionId: string) => ['decisions', 'detail', decisionId] as const,
     byEntity: (entityId: string, params: Record<string, unknown>) =>
       ['decisions', 'byEntity', entityId, params] as const,
+    runbook: (decisionId: string) => ['decisions', 'runbook', decisionId] as const,
   },
   coverage: {
     current: (params?: Record<string, unknown>) => ['coverage', 'current', params ?? {}] as const,

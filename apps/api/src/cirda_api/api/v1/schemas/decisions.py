@@ -68,6 +68,28 @@ class DecisionReport(ApiModel):
     created_by: str | None = None
     created_at: datetime | None = None
     paths: list[dict[str, Any]] = Field(default_factory=list)
+    runbook_executions: list[RunbookExecutionSchema] = Field(default_factory=list)
+
+
+class RunbookExecutionSchema(ApiModel):
+    execution_id: str
+    stage: str
+    status: str
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+    notes: str | None = None
+    description: str | None = None
+    decision_id: str | None = None
+
+
+class RunbookExecutionUpdate(ApiModel):
+    status: str = Field(description="pending | in_progress | completed")
+    notes: str | None = None
+
+
+class RunbookExecutionListResponse(ApiModel):
+    decision_id: str
+    items: list[RunbookExecutionSchema]
 
 
 class DecisionEvaluateRequest(ApiModel):

@@ -2,7 +2,7 @@ import { Download, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useDecision } from '@/api/queries/use-decisions';
-import { useApplyProbes, useRerunDecision } from '@/api/mutations/use-evaluate-decision';
+import { useApplyProbes, useRerunDecision, useUpdateRunbookStage } from '@/api/mutations/use-evaluate-decision';
 import { LimitationsFooter } from '@/components/data-display/limitations-footer';
 import { StatCard } from '@/components/data-display/stat-card';
 import { VerdictBadge } from '@/components/data-display/verdict-badge';
@@ -27,6 +27,7 @@ export function DecisionReportPage() {
   const decision = useDecision(decisionId);
   const rerun = useRerunDecision();
   const applyProbes = useApplyProbes();
+  const updateRunbook = useUpdateRunbookStage(decisionId);
   const [applyNote, setApplyNote] = useState<string | null>(null);
 
   if (decision.isLoading) return <LoadingSpinner label="Loading decision report…" />;
@@ -202,6 +203,22 @@ export function DecisionReportPage() {
               </p>
               <p>Meets C_min: {rationale.coverage_breakdown.meets_threshold ? 'Yes' : 'No'}</p>
               <p>C_min: {formatPercent(rationale.coverage_breakdown.c_min)}</p>
+              {typeof rationale.coverage_breakdown.ingest_lag_seconds === 'number' ? (
+                <p>
+                  Ingest lag:{' '}
+                  <span className="font-mono font-medium">
+                    {Math.round(rationale.coverage_breakdown.ingest_lag_seconds)}s
+                  </span>
+                  {typeof rationale.coverage_breakdown.max_ingest_lag_seconds === 'number'
+                    ? ` / max ${Math.round(rationale.coverage_breakdown.max_ingest_lag_seconds)}s`
+                    : null}
+                  {rationale.coverage_breakdown.lag_exceeded ? (
+                    <Badge className="ml-2" variant="destructive">
+                      exceeds policy
+                    </Badge>
+                  ) : null}
+                </p>
+              ) : null}
             </CardContent>
           </Card>
 
@@ -210,7 +227,62 @@ export function DecisionReportPage() {
               <CardTitle className="text-base">Suggested runbook</CardTitle>
             </CardHeader>
             <CardContent>
-              {rationale.suggested_runbook.length === 0 ? (
+              {(report.runbook_executions?.length ?? 0) > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Stage</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="w-[1%] whitespace-nowrap">Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {report.runbook_executions?.map((execution) => (
+                      <TableRow key={execution.execution_id}>
+                        <TableCell className="font-medium">{execution.stage}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{execution.status}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          {execution.status === 'pending' ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={updateRunbook.isPending}
+                              onClick={() =>
+                                updateRunbook.mutate({
+                                  executionId: execution.execution_id,
+                                  status: 'in_progress',
+                                })
+                              }
+                            >
+                              Start
+                            </Button>
+                          ) : null}
+                          {execution.status === 'in_progress' ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={updateRunbook.isPending}
+                              onClick={() =>
+                                updateRunbook.mutate({
+                                  executionId: execution.execution_id,
+                                  status: 'completed',
+                                })
+                              }
+                            >
+                              Complete
+                            </Button>
+                          ) : null}
+                          {execution.status === 'completed' ? (
+                            <span className="text-xs text-muted-foreground">Done</span>
+                          ) : null}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : rationale.suggested_runbook.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No runbook actions suggested.</p>
               ) : (
                 <Table>

@@ -21,6 +21,8 @@
     "/api/v1/decisions/probes/apply",
     "/api/v1/decisions/{decision_id}",
     "/api/v1/decisions/{decision_id}/rerun",
+    "/api/v1/decisions/{decision_id}/runbook",
+    "/api/v1/decisions/{decision_id}/runbook/{execution_id}",
     "/api/v1/edges",
     "/api/v1/edges/necessity-suggestions",
     "/api/v1/edges/{edge_id}",

@@ -154,8 +154,62 @@ class MemoryStore:
         with self._lock:
             decision_id = record.get("decision_id") or str(uuid.uuid4())
             record = {**record, "decision_id": decision_id}
+            executions = record.get("runbook_executions")
+            if executions is None:
+                executions = []
+                for action in (record.get("rationale") or {}).get("suggested_runbook") or []:
+                    executions.append(
+                        {
+                            "execution_id": str(uuid.uuid4()),
+                            "decision_id": decision_id,
+                            "stage": action["stage"],
+                            "status": "pending",
+                            "started_at": None,
+                            "completed_at": None,
+                            "notes": None,
+                            "description": action.get("description"),
+                        }
+                    )
+            record = {**record, "runbook_executions": executions}
             self.decisions[decision_id] = deepcopy(record)
+            self.runbook_executions[decision_id] = deepcopy(executions)
             return self.decisions[decision_id]
+
+    def list_runbook_executions(self, decision_id: str) -> list[dict[str, Any]]:
+        with self._lock:
+            return deepcopy(self.runbook_executions.get(decision_id, []))
+
+    def update_runbook_execution(
+        self,
+        decision_id: str,
+        execution_id: str,
+        *,
+        status: str,
+        notes: str | None = None,
+    ) -> dict[str, Any] | None:
+        with self._lock:
+            rows = self.runbook_executions.get(decision_id)
+            if not rows:
+                return None
+            now = _utcnow()
+            for i, row in enumerate(rows):
+                if row["execution_id"] != execution_id:
+                    continue
+                updated = {**row, "status": status}
+                if notes is not None:
+                    updated["notes"] = notes
+                if status == "in_progress" and not updated.get("started_at"):
+                    updated["started_at"] = now
+                if status == "completed":
+                    if not updated.get("started_at"):
+                        updated["started_at"] = now
+                    updated["completed_at"] = now
+                rows[i] = updated
+                self.runbook_executions[decision_id] = rows
+                if decision_id in self.decisions:
+                    self.decisions[decision_id]["runbook_executions"] = deepcopy(rows)
+                return deepcopy(updated)
+            return None
 
     def link_supersedes(self, new_id: str, old_id: str) -> None:
         with self._lock:

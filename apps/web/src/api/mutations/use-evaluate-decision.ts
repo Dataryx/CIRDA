@@ -1,5 +1,10 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { applyProbes, evaluateDecision, rerunDecision } from '@/api/endpoints/decisions';
+import {
+  applyProbes,
+  evaluateDecision,
+  rerunDecision,
+  updateRunbookStage,
+} from '@/api/endpoints/decisions';
 import { queryKeys } from '@/api/query-keys';
 import type { DecisionEvaluateRequest } from '@/api/generated/schema.d';
 import type { ProbeApplyRequest } from '@/api/endpoints/decisions';
@@ -33,6 +38,25 @@ export function useApplyProbes() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['decisions'] });
       void queryClient.invalidateQueries({ queryKey: ['coverage'] });
+    },
+  });
+}
+
+export function useUpdateRunbookStage(decisionId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      executionId,
+      status,
+      notes,
+    }: {
+      executionId: string;
+      status: string;
+      notes?: string | null;
+    }) => updateRunbookStage(decisionId, executionId, { status, notes }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.decisions.detail(decisionId) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.decisions.runbook(decisionId) });
     },
   });
 }

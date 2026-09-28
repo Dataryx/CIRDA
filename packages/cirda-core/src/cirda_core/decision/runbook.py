@@ -25,8 +25,11 @@ _STAGE_DESCRIPTIONS: dict[RunbookStage, str] = {
 def default_runbook_for_verdict(verdict: Verdict, entity_id: str) -> tuple[RunbookAction, ...]:
     """Return staged runbook actions for a verdict."""
     if verdict == Verdict.SAFE:
-        return ()
-    stages = STANDARD_RUNBOOK if verdict == Verdict.UNSAFE else STANDARD_RUNBOOK[:2]
+        stages = STANDARD_RUNBOOK
+    elif verdict == Verdict.UNSAFE:
+        stages = STANDARD_RUNBOOK
+    else:
+        stages = STANDARD_RUNBOOK[:2]
     return tuple(
         RunbookAction(
             stage=stage,

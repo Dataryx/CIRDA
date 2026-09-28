@@ -75,6 +75,9 @@ export interface CoverageEstimate {
   suppressed_channels: string[];
   meets_threshold: boolean;
   c_min: number;
+  ingest_lag_seconds?: number;
+  max_ingest_lag_seconds?: number;
+  lag_exceeded?: boolean;
   as_of?: string;
 }
 
@@ -155,6 +158,16 @@ export interface DecisionPath {
   path_id?: string;
 }
 
+export interface RunbookExecution {
+  execution_id: string;
+  stage: string;
+  status: string;
+  started_at?: string | null;
+  completed_at?: string | null;
+  notes?: string | null;
+  description?: string | null;
+}
+
 export interface DecisionReport {
   decision_id: string;
   entity_id: string;
@@ -172,6 +185,7 @@ export interface DecisionReport {
   created_by?: string | null;
   created_at?: string | null;
   paths: DecisionPath[] | Record<string, unknown>[];
+  runbook_executions?: RunbookExecution[];
 }
 
 export interface DecisionEvaluateRequest {
