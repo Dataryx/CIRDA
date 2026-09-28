@@ -41,9 +41,19 @@ async def get_request_container(
     session: Annotated[AsyncSession, Depends(get_session)],
     settings: Annotated[Settings, Depends(get_settings)],
 ) -> Container:
+    from cirda_api.security.tenant import resolve_tenant
+
+    tenant_header = request.headers.get("X-CIRDA-Tenant")
+
+    if hasattr(request.app.state, "container"):
+        container = request.app.state.container
+        await resolve_tenant(container.settings, x_cirda_tenant=tenant_header)
+        if container.settings.use_memory_store:
+            return container
+        return build_container(container.settings, session=session)
+
+    await resolve_tenant(settings, x_cirda_tenant=tenant_header)
     if settings.use_memory_store:
-        if hasattr(request.app.state, "container"):
-            return request.app.state.container
         return get_app_container()
     return build_container(settings, session=session)
 

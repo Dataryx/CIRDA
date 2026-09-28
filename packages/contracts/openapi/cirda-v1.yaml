@@ -456,6 +456,48 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/edges/necessity-auto-mutate:
+    post:
+      tags:
+      - edges
+      summary: Necessity Auto Mutate
+      operationId: necessity_auto_mutate_api_v1_edges_necessity_auto_mutate_post
+      parameters:
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NecessityAutoMutateRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NecessityAutoMutateResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/v1/edges/{edge_id}:
     get:
       tags:
@@ -2156,6 +2198,19 @@ components:
         c_min:
           type: number
           title: C Min
+        ingest_lag_seconds:
+          type: number
+          title: Ingest Lag Seconds
+          default: 0.0
+        max_ingest_lag_seconds:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Max Ingest Lag Seconds
+        lag_exceeded:
+          type: boolean
+          title: Lag Exceeded
+          default: false
         as_of:
           anyOf:
           - type: string
@@ -2460,6 +2515,11 @@ components:
           additionalProperties: true
           type: object
           title: Metadata
+        aliases:
+          items:
+            type: string
+          type: array
+          title: Aliases
       additionalProperties: false
       type: object
       required:
@@ -2508,6 +2568,10 @@ components:
             type: string
           type: array
           title: Aliases
+        tenant_id:
+          type: string
+          title: Tenant Id
+          default: default
         created_at:
           anyOf:
           - type: string
@@ -2792,6 +2856,13 @@ components:
         edge_updated:
           type: boolean
           title: Edge Updated
+        resolved_from:
+          anyOf:
+          - additionalProperties:
+              type: string
+            type: object
+          - type: 'null'
+          title: Resolved From
       additionalProperties: false
       type: object
       required:
@@ -2799,6 +2870,56 @@ components:
       - created
       - edge_updated
       title: IngestResult
+    NecessityAutoMutateRequest:
+      properties:
+        source_id:
+          type: string
+          minLength: 1
+          title: Source Id
+        as_of:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: As Of
+      type: object
+      required:
+      - source_id
+      title: NecessityAutoMutateRequest
+    NecessityAutoMutateResponse:
+      properties:
+        source_id:
+          type: string
+          title: Source Id
+        mode:
+          type: string
+          title: Mode
+        min_confidence:
+          type: number
+          title: Min Confidence
+        allowed_labels:
+          items:
+            type: string
+          type: array
+          title: Allowed Labels
+        candidates:
+          type: integer
+          title: Candidates
+        applied:
+          items:
+            additionalProperties: true
+            type: object
+          type: array
+          title: Applied
+      type: object
+      required:
+      - source_id
+      - mode
+      - min_confidence
+      - allowed_labels
+      - candidates
+      - applied
+      title: NecessityAutoMutateResponse
     NecessityHintListResponse:
       properties:
         source_id:
@@ -2922,6 +3043,16 @@ components:
         actual_delta_c:
           type: number
           title: Actual Delta C
+        events_ingested:
+          type: integer
+          title: Events Ingested
+          default: 0
+        collector_details:
+          items:
+            additionalProperties: true
+            type: object
+          type: array
+          title: Collector Details
         suppressed_channels_after:
           items:
             type: string

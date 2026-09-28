@@ -17,7 +17,7 @@ export function TopologyPage() {
     <div>
       <PageHeader
         title="Topology"
-        description="Dependency graph visualization. Confirmed edges are solid; possible edges are dashed (INV-014)."
+        description="Dependency graph visualization. Confirmed edges are solid; possible edges are dashed. Optional/redundant necessity is muted (skipped for critical blast)."
         actions={
           <Select value={layer} onValueChange={(v) => setLayer(v as GraphLayer)}>
             <SelectTrigger className="w-48">
@@ -45,14 +45,22 @@ export function TopologyPage() {
             {graph.data.as_of ? <span>As of {formatDateTime(graph.data.as_of)}</span> : null}
           </div>
           <GraphViewer nodes={graph.data.nodes} edges={graph.data.edges} />
-          <div className="flex gap-6 text-sm">
+          <div className="flex flex-wrap gap-6 text-sm">
             <div className="flex items-center gap-2">
-              <span className="inline-block h-0.5 w-8 bg-layer-confirmed" />
+              <span className="inline-block h-0.5 w-8 bg-[#0072B2]" />
               Confirmed (solid)
             </div>
             <div className="flex items-center gap-2">
-              <span className="inline-block h-0.5 w-8 border-t-2 border-dashed border-layer-possible" />
+              <span className="inline-block h-0.5 w-8 border-t-2 border-dashed border-[#56B4E9]" />
               Possible (dashed)
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="inline-block h-1 w-8 bg-[#0072B2]" />
+              Load-bearing necessity
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="inline-block h-0.5 w-8 border-t border-dotted border-muted-foreground opacity-50" />
+              Optional / redundant (muted)
             </div>
           </div>
         </div>

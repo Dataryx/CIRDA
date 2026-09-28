@@ -37,6 +37,7 @@ class IngestResult(ApiModel):
     event: EvidenceEventResponse
     created: bool
     edge_updated: bool
+    resolved_from: dict[str, str] | None = None
 
 
 class IngestBatchResult(ApiModel):

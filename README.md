@@ -94,7 +94,9 @@ CIRDA `false_safe=0` at high loss and several metric cells land within tolerance
 remaining cells are tracked as explicit `xfail` gaps in
 [`packages/cirda-bench/CALIBRATION.md`](packages/cirda-bench/CALIBRATION.md).
 
-**Roadmap hooks:** necessity auto-mutate inference, multi-tenant aggregation; live collector probe execution.
+**Roadmap status:** necessity auto-mutate, live collector probes, and multi-tenant
+isolation are implemented behind flags (off by default). Table II residual `xfail`
+cells remain honest calibration gaps for baseline methods; CIRDA `false_safe=0` holds.
 
 See [docs/paper/fidelity-matrix.md](docs/paper/fidelity-matrix.md) for claim → code → test mapping.
 
@@ -116,7 +118,7 @@ Every decision report includes a limitations footer (configurable via `CIRDA_DEC
 |-------|------------------|----------|
 | `invoice-reconciler-agent` | UNSAFE | Critical downstream deps (ledger); optional invoice-queue edge ignored for critical blast |
 | `legacy-csv-export-agent` | SAFE | Isolated, no critical reachability |
-| `vendor-risk-agent` | INDETERMINATE | Ambiguous identity, insufficient coverage |
+| `vendor-risk-agent` | INDETERMINATE | Alias collision (`vrisk`) + insufficient coverage |
 
 Plus: mediated dependency chain, decaying edge, telemetry suppression on the messaging channel,
 and an operator-annotated `optional` edge (`invoice-reconciler-agent→invoice-queue`).

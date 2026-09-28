@@ -19,7 +19,7 @@ from cirda_core.graph.reachability import ReachabilityResult, critical_descendan
 from cirda_core.graph.snapshot import GraphSnapshot
 from cirda_core.graph.temporal_graph import TemporalGraph
 from cirda_core.inference.direction import RETAINED, REVERSED, translate_to_dependency_edge
-from cirda_core.inference.fusion import ChannelObservation, channel_strength, fuse_channels, has_direct_evidence
+from cirda_core.inference.fusion import ChannelObservation, channel_strength, fuse_channels, has_confirming_evidence, has_direct_evidence
 from cirda_core.inference.weak_signals import can_confirm_layer, weak_only_observations
 from cirda_core.normalization.adapters import ALL_ADAPTERS
 from cirda_core.normalization.normalizer import Normalizer
@@ -69,6 +69,7 @@ __all__ = [
     "fuse_channels",
     "get_channel_profile",
     "half_life_seconds",
+    "has_confirming_evidence",
     "has_direct_evidence",
     "meets_coverage_threshold",
     "plan_probes",

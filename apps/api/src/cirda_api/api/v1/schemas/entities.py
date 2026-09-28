@@ -17,6 +17,7 @@ class EntityResponse(ApiModel):
     criticality: str = "unknown"
     metadata: dict[str, Any] = Field(default_factory=dict)
     aliases: list[str] = Field(default_factory=list)
+    tenant_id: str = "default"
     created_at: datetime | None = None
     updated_at: datetime | None = None
 
@@ -27,6 +28,7 @@ class EntityCreateRequest(ApiModel):
     name: str
     criticality: str = "unknown"
     metadata: dict[str, Any] = Field(default_factory=dict)
+    aliases: list[str] = Field(default_factory=list)
 
 
 class EntityListResponse(ApiModel):

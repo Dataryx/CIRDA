@@ -13,6 +13,7 @@ def explain_decision(
     *,
     ingest_lag_seconds: float | None = None,
     max_ingest_lag_seconds: float | None = None,
+    identity_detail: str | None = None,
 ) -> DecisionExplanation:
     """Build human-readable explanation for a gate decision."""
     if decision.verdict == Verdict.UNSAFE:
@@ -22,6 +23,10 @@ def explain_decision(
         )
     elif decision.verdict == Verdict.SAFE:
         summary = f"Entity {entity_id} is SAFE: coverage {decision.coverage:.2f} meets threshold."
+    elif "ambiguous_identity" in decision.reason_codes:
+        summary = (
+            f"Entity {entity_id} is INDETERMINATE: unresolved identity ambiguity."
+        )
     elif "ingest_lag_exceeded" in decision.reason_codes:
         summary = (
             f"Entity {entity_id} is INDETERMINATE: ingest lag exceeds policy "
@@ -34,6 +39,7 @@ def explain_decision(
         decision,
         ingest_lag_seconds=ingest_lag_seconds,
         max_ingest_lag_seconds=max_ingest_lag_seconds,
+        identity_detail=identity_detail,
     )
     runbook = default_runbook_for_verdict(decision.verdict, entity_id)
     return DecisionExplanation(
@@ -49,6 +55,7 @@ def _detail_lines(
     *,
     ingest_lag_seconds: float | None,
     max_ingest_lag_seconds: float | None,
+    identity_detail: str | None,
 ) -> tuple[str, ...]:
     lines: list[str] = []
     for code in sorted(decision.reason_codes):
@@ -61,6 +68,8 @@ def _detail_lines(
                 f"ingest_lag_exceeded: max channel lag {ingest_lag_seconds:.0f}s "
                 f"exceeds policy max_ingest_lag_seconds={max_ingest_lag_seconds:.0f}s"
             )
+        elif code == "ambiguous_identity" and identity_detail:
+            lines.append(f"ambiguous_identity: {identity_detail}")
         else:
             lines.append(code)
     return tuple(lines)

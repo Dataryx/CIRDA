@@ -12,3 +12,17 @@ export function fetchEntities(params: {
 export function fetchEntity(entityId: string): Promise<EntityResponse> {
   return apiRequest<EntityResponse>(`/api/v1/entities/${encodeURIComponent(entityId)}`);
 }
+
+export function createEntity(body: {
+  entity_id: string;
+  entity_type: string;
+  name: string;
+  criticality?: string;
+  aliases?: string[];
+  metadata?: Record<string, unknown>;
+}): Promise<EntityResponse> {
+  return apiRequest<EntityResponse>('/api/v1/entities', {
+    method: 'POST',
+    body,
+  });
+}

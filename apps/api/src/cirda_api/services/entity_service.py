@@ -31,11 +31,19 @@ class EntityService:
         name: str,
         criticality: str = "unknown",
         metadata: dict[str, Any] | None = None,
+        aliases: list[str] | None = None,
     ) -> dict[str, Any]:
+        # Promote metadata.aliases into the aliases table when callers only set metadata.
+        resolved_aliases = aliases
+        if resolved_aliases is None and metadata:
+            meta_aliases = metadata.get("aliases")
+            if isinstance(meta_aliases, list):
+                resolved_aliases = [str(a) for a in meta_aliases]
         return await self.repo.upsert_entity(
             entity_id=entity_id,
             entity_type=entity_type,
             name=name,
             criticality=criticality,
             metadata=metadata,
+            aliases=resolved_aliases,
         )

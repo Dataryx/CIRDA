@@ -47,6 +47,7 @@ async def create_entity(
         name=body.name,
         criticality=body.criticality,
         metadata=body.metadata,
+        aliases=body.aliases if body.aliases else None,
     )
     await container.audit_service.log(
         principal_id=principal.principal_id,

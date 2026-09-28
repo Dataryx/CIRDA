@@ -19,6 +19,7 @@ def evaluate_gate(
     max_depth: int | None = None,
     max_nodes: int | None = None,
     ingest_lag_seconds: float = 0.0,
+    ambiguous_identity: bool = False,
 ) -> GateDecision:
     """
     Evaluate tri-state safety gate using G_p (possible layer) only (INV-001).
@@ -70,18 +71,15 @@ def evaluate_gate(
             reason_codes=frozenset(reason_codes),
         )
 
+    soft_blocks: list[str] = []
     if coverage < cfg.c_min:
-        reason_codes.add("coverage_below_threshold")
-        return GateDecision(
-            verdict=Verdict.INDETERMINATE,
-            coverage=coverage,
-            truncated=False,
-            hard_blocks=cfg.hard_blocks,
-            reason_codes=frozenset(reason_codes),
-        )
-
+        soft_blocks.append("coverage_below_threshold")
     if ingest_lag_seconds > cfg.max_ingest_lag_seconds:
-        reason_codes.add("ingest_lag_exceeded")
+        soft_blocks.append("ingest_lag_exceeded")
+    if ambiguous_identity:
+        soft_blocks.append("ambiguous_identity")
+    if soft_blocks:
+        reason_codes.update(soft_blocks)
         return GateDecision(
             verdict=Verdict.INDETERMINATE,
             coverage=coverage,

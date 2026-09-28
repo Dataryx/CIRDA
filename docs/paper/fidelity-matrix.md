@@ -6,8 +6,9 @@ Mapping of CIRDA paper claims to code paths and test identifiers. PDF not includ
 |-------------|-----------|---------|
 | Temporal evidence graph with channel decay | `cirda_core.graph.decay`, `HALF_LIFE` | `test_determinism.py` |
 | Multi-channel evidence fusion | `cirda_core.inference.fusion` | `test_generator_shape.py` |
-| Entity resolution / alias handling | `cirda_core.resolution.entity_resolver` | `seed_demo_estate.py` (ambiguous identity) |
+| Entity resolution / alias handling | `ambiguity.py`; API + worker ingest alias resolve; gate `ambiguous_identity` | `test_ambiguous_identity.py`, `test_ingest_alias_resolve.py`, `test_pipeline_stages.py` |
 | θ_c / θ_p layer classification | `cirda_core.graph.layers`, `constants.py` | `check_constants_parity.py` |
+| Static DECLARED can confirm | `has_confirming_evidence` (DIRECT ∪ DECLARED) | `test_static_declared_can_confirm.py` |
 | Coverage estimation C | `cirda_core.coverage.estimator` | `apps/api/tests/integration/test_coverage.py` |
 | Suppression detection | `cirda_core.coverage.suppression` | `incident-telemetry-suppression.md` scenario |
 | Tri-state gate (UNSAFE/SAFE/INDETERMINATE) | `cirda_core.decision.gate` | `test_zero_false_safe_at_30_45_60_loss.py` |
@@ -22,20 +23,26 @@ Mapping of CIRDA paper claims to code paths and test identifiers. PDF not includ
 | Probe planning for INDETERMINATE | `cirda_core.decision.probe_planner`, wired in `decision_service.py` | `test_probe_planner.py`, `test_decision_flow.py` |
 | Probe expected ΔC | `estimate_probe_delta_c` (restore suppressed channel → re-estimate C) | `test_probe_planner.py` |
 | Probe apply (suppression lift) | `POST /decisions/probes/apply`; `CoverageService.restore_channels_for_probe` | `test_decision_flow.py` |
+| Live collector probes | HTTP probe via `metadata.probe_url` when `CIRDA_PROBE_COLLECTOR_ENABLED` | `probe_collectors.py` |
+| Necessity auto-mutate | `necessity_applier.py`; `POST /edges/necessity-auto-mutate` (flag-gated) | `test_necessity_applier.py`, `test_necessity_auto_mutate.py` |
+| Multi-tenant isolation | `tenant_id` + `X-CIRDA-Tenant`; ADR 0006 | `test_multi_tenant.py` |
+| Analysis UI | Web `/analysis` over blast/reachability/paths APIs | `test_analysis.py` |
 | Necessity-aware critical traversal | `reachability.py` load-bearing filter; gate/blast | `test_necessity_load_bearing.py` |
 | Operator necessity annotation | `PATCH /api/v1/edges/{edge_id}`; preserved on re-ingest | `test_edge_necessity.py` |
 | Necessity suggestions (suggest-only) | `necessity_suggester.py`; `GET /edges/necessity-suggestions` | `test_necessity_suggester.py`, `test_necessity_suggestions.py` |
 | Calibrated support S as probability | N/A — documented limitation | README limitations section |
-| Distributed graph partition | N/A — single-tenant Postgres | ADR 0003 |
+| Distributed graph partition | Phase-1 logical tenants (`tenant_id`); not physical partition | ADR 0006, `test_multi_tenant.py` |
 
 ## Partial / Simplified
 
 | Area | Gap | Mitigation |
 |------|-----|------------|
-| Probe planning | Apply lifts suppression + reports actual vs expected ΔC; no live collector execution | `CIRDA_PROBE_PLANNING_ENABLED` + `CIRDA_PROBE_EXECUTION_ENABLED` (off by default) |
-| Necessity models | Suggest-only heuristics + operator PATCH (no auto-mutate) | UNKNOWN ≡ load-bearing; optional/redundant skipped; demo seeds invoice→invoice-queue as optional |
+| Probe planning | Apply lifts suppression; optional live HTTP collector probe when flagged | `CIRDA_PROBE_*` flags; requires `metadata.probe_url` for collector mode |
+| Necessity models | Suggest-only by default; optional auto-mutate of high-confidence `required` | `CIRDA_NECESSITY_AUTO_MUTATE_ENABLED` (off); UNKNOWN ≡ load-bearing |
+| Multi-tenant | Logical tenant isolation on entities (Phase 1) | `CIRDA_MULTI_TENANT_ENABLED`; ADR 0006 |
 | Weak signal weights | Heuristic vs full calibration | `calibration-guide.md` |
 | Causal inference | Support ≠ causation | Limitations footer on every report |
+| Table II residuals | Baseline method cells + CIRDA bp@0.60 still xfail | `KNOWN_GAPS` / `CALIBRATION.md`; CIRDA false_safe=0 exact |
 
 ## Verification Command
 

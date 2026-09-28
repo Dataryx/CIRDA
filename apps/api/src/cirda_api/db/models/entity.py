@@ -20,6 +20,7 @@ class Entity(Base):
     entity_type: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
     name: Mapped[str] = mapped_column(String(512), nullable=False)
     criticality: Mapped[str] = mapped_column(String(16), nullable=False, default="unknown")
+    tenant_id: Mapped[str] = mapped_column(String(128), nullable=False, default="default", index=True)
     metadata_json: Mapped[dict[str, Any]] = mapped_column("metadata", JsonColumn, nullable=False, default=dict)
     created_at: Mapped[Any] = mapped_column(UTCDateTime, nullable=False)
     updated_at: Mapped[Any] = mapped_column(UTCDateTime, nullable=False)

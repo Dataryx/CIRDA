@@ -266,6 +266,79 @@ async def test_decision_evaluate_includes_critical_paths(client: AsyncClient) ->
 
 
 @pytest.mark.asyncio
+async def test_ambiguous_identity_blocks_safe_verdict(client: AsyncClient) -> None:
+    """Split identity (orphan alias node) must prevent SAFE."""
+    from datetime import datetime, timezone
+
+    headers_analyst = {"Authorization": "Bearer dev", "X-CIRDA-Role": "analyst"}
+    headers_approver = {"Authorization": "Bearer dev", "X-CIRDA-Role": "approver"}
+
+    create = await client.post(
+        "/api/v1/entities",
+        json={
+            "entity_id": "identity-agent",
+            "entity_type": "agent",
+            "name": "Identity Agent",
+            "criticality": "low",
+            "aliases": ["identity_alias"],
+        },
+        headers=headers_analyst,
+    )
+    assert create.status_code == 201
+    assert "identity_alias" in create.json()["aliases"]
+
+    # Orphan node whose id matches the declared alias (split identity).
+    orphan = await client.post(
+        "/api/v1/entities",
+        json={
+            "entity_id": "identity_alias",
+            "entity_type": "agent",
+            "name": "Orphan Alias",
+            "criticality": "low",
+        },
+        headers=headers_analyst,
+    )
+    assert orphan.status_code == 201
+
+    for i in range(10):
+        await client.post(
+            "/api/v1/entities",
+            json={
+                "entity_id": f"id-pad-{i}",
+                "entity_type": "service",
+                "name": f"Pad {i}",
+                "criticality": "low",
+            },
+            headers=headers_analyst,
+        )
+        await client.post(
+            "/api/v1/ingest/events",
+            json={
+                "raw": {
+                    "source": "trace",
+                    "event_id": f"id-pad-ev-{i}",
+                    "source_id": f"id-pad-{i}",
+                    "target_id": f"id-pad-{(i + 1) % 10}",
+                    "relation": "calls",
+                    "observed_at": datetime.now(timezone.utc).isoformat(),
+                }
+            },
+            headers=headers_analyst,
+        )
+
+    blocked = await client.post(
+        "/api/v1/decisions/evaluate",
+        json={"entity_id": "identity-agent", "change_type": "retirement"},
+        headers=headers_approver,
+    )
+    assert blocked.status_code == 201
+    body = blocked.json()
+    assert body["verdict"] == "INDETERMINATE"
+    assert "ambiguous_identity" in body["reason_codes"]
+    assert any("ambiguous_identity" in d for d in body["rationale"]["details"])
+
+
+@pytest.mark.asyncio
 async def test_ingest_lag_blocks_safe_verdict(client: AsyncClient) -> None:
     """INV-002 wired: channel health lag must prevent SAFE when it exceeds policy."""
     from datetime import datetime, timezone

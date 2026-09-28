@@ -11,6 +11,7 @@ import { DecisionReportPage } from '@/features/decommission/decision-report-page
 import { EvidencePage } from '@/features/evidence/evidence-page';
 import { EdgeEvidencePage } from '@/features/evidence/edge-evidence-page';
 import { CoveragePage } from '@/features/coverage/coverage-page';
+import { AnalysisPage } from '@/features/analysis/analysis-page';
 import { BenchmarkPage } from '@/features/benchmark/benchmark-page';
 import { BenchmarkRunPage } from '@/features/benchmark/benchmark-run-page';
 import { CalibrationPage } from '@/features/calibration/calibration-page';
@@ -43,6 +44,7 @@ export const router = createBrowserRouter([
       { path: 'evidence', element: <EvidencePage /> },
       { path: 'evidence/edges/:edgeId', element: <EdgeEvidencePage /> },
       { path: 'coverage', element: <CoveragePage /> },
+      { path: 'analysis', element: <AnalysisPage /> },
       { path: 'benchmark', element: <BenchmarkPage /> },
       { path: 'benchmark/runs/:runId', element: <BenchmarkRunPage /> },
       { path: 'calibration', element: <CalibrationPage /> },

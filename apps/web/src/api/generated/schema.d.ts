@@ -137,6 +137,8 @@ export interface ProbeApplyResult {
   coverage_after: number;
   expected_delta_c: number;
   actual_delta_c: number;
+  events_ingested?: number;
+  collector_details?: Record<string, unknown>[];
   suppressed_channels_after: string[];
   as_of?: string | null;
 }
@@ -201,6 +203,7 @@ export interface EntityResponse {
   criticality?: string;
   metadata?: Record<string, unknown>;
   aliases?: string[];
+  tenant_id?: string;
   created_at?: string | null;
   updated_at?: string | null;
 }
@@ -211,6 +214,7 @@ export interface EntityCreateRequest {
   name: string;
   criticality?: string;
   metadata?: Record<string, unknown>;
+  aliases?: string[];
 }
 
 export interface EdgeResponse {
@@ -243,6 +247,20 @@ export interface NecessityHintListResponse {
   source_id: string;
   items: NecessityHint[];
   mode: string;
+}
+
+export interface NecessityAutoMutateRequest {
+  source_id: string;
+  as_of?: string | null;
+}
+
+export interface NecessityAutoMutateResponse {
+  source_id: string;
+  mode: string;
+  min_confidence: number;
+  allowed_labels: string[];
+  candidates: number;
+  applied: Record<string, unknown>[];
 }
 
 export interface EdgeEvidenceResponse {

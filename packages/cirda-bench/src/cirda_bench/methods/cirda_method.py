@@ -10,7 +10,7 @@ from cirda_core.domain.edge import DependencyEdge
 from cirda_core.domain.entity import Entity
 from cirda_core.domain.enums import GraphLayer
 from cirda_core.graph.layers import classify_layer
-from cirda_core.inference.fusion import fuse_channels, has_direct_evidence
+from cirda_core.inference.fusion import fuse_channels, has_confirming_evidence
 
 from cirda_bench.calibration import cirda_blast_min_confidence
 from cirda_bench.generator.telemetry import TelemetryBundle, to_channel_observations
@@ -48,7 +48,7 @@ class CirdaMethod(Method):
             strength = fuse_channels(obs)
             layer = classify_layer(
                 strength,
-                has_direct_evidence(obs),
+                has_confirming_evidence(obs),
                 policy=policy,
             )
             if layer is None:

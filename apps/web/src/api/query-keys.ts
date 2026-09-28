@@ -36,4 +36,7 @@ export const queryKeys = {
     run: (runId: string) => ['benchmarks', 'run', runId] as const,
   },
   audit: (params: Record<string, unknown>) => ['audit', params] as const,
+  analysis: {
+    paths: (params: Record<string, unknown>) => ['analysis', 'paths', params] as const,
+  },
 };

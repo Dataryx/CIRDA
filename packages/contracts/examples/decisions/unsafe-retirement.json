@@ -4,32 +4,31 @@
   "verdict": "UNSAFE",
   "coverage": 0.91,
   "truncated": false,
-  "reason_codes": ["CRITICAL_REACHABLE", "COVERAGE_SUFFICIENT"],
+  "reason_codes": ["critical_descendant_reachable"],
   "rationale": {
-    "summary": "Critical dependents reachable via confirmed edges; retirement blocked.",
-    "details": [
-      "Reachable: ledger-db (critical), payment-api (critical)",
-      "Coverage 0.91 exceeds C_min 0.85"
-    ],
-    "reason_codes": ["CRITICAL_REACHABLE"],
+    "summary": "Entity invoice-reconciler-agent is UNSAFE: critical descendants reachable (2 nodes).",
+    "details": ["critical_descendant_reachable"],
+    "reason_codes": ["critical_descendant_reachable"],
     "blast_radius": {
-      "nodes": ["ledger-db", "payment-api", "invoice-queue"],
-      "max_depth": 3
+      "all_reachable_count": 3,
+      "critical_reachable_count": 2,
+      "critical_reachable": ["ledger-db", "payment-api"],
+      "truncated": false,
+      "layer": "possible"
     },
     "coverage_breakdown": {
-      "trace": 0.95,
-      "messaging": 0.72
+      "coverage": 0.91,
+      "observed_entities": 91,
+      "total_entities": 100,
+      "suppressed_channels": [],
+      "meets_threshold": true,
+      "c_min": 0.85
     },
     "suggested_runbook": [
       {
         "stage": "report_and_remediate",
-        "description": "Notify finance platform team of blocked retirement",
+        "description": "Notify owners of blocked retirement due to critical dependents",
         "entity_id": "invoice-reconciler-agent"
-      },
-      {
-        "stage": "disable_new_work",
-        "description": "Drain invoice-queue before retrying retirement",
-        "entity_id": "invoice-queue"
       }
     ]
   },
@@ -37,5 +36,11 @@
   "as_of": "2026-09-23T10:00:00+00:00",
   "engine_version": "0.1.0",
   "change_type": "retirement",
-  "paths": []
+  "paths": [
+    {
+      "path_nodes": ["invoice-reconciler-agent", "ledger-db"],
+      "path_confidence": 0.95,
+      "is_critical_path": true
+    }
+  ]
 }

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
   useEdge,
@@ -13,11 +13,14 @@ import { LoadingSpinner } from '@/components/feedback/loading-spinner';
 import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import type { FusionBreakdown } from '@/api/generated/schema.d';
 import { formatDateTime } from '@/lib/datetime';
 import { formatConfidence } from '@/lib/format';
+
+const NECESSITY_OPTIONS = ['unknown', 'required', 'optional', 'redundant', 'fallback'] as const;
 
 export function EdgeEvidencePage() {
   const { edgeId = '' } = useParams();
@@ -25,6 +28,7 @@ export function EdgeEvidencePage() {
   const evidence = useEdgeEvidence(edgeId);
   const hints = useNecessitySuggestions(edge.data?.source_id ?? '');
   const patchNecessity = usePatchEdgeNecessity();
+  const [manualNecessity, setManualNecessity] = useState<string | null>(null);
 
   const fusionBreakdown = useMemo((): FusionBreakdown | null => {
     if (!edge.data || !evidence.data) return null;
@@ -44,6 +48,7 @@ export function EdgeEvidencePage() {
   }, [edge.data, evidence.data]);
 
   const hintForEdge = hints.data?.items.find((item) => item.edge_id === edge.data?.edge_id);
+  const selectedNecessity = manualNecessity ?? edge.data?.necessity ?? 'unknown';
 
   const isLoading = edge.isLoading || evidence.isLoading;
   const error = edge.error ?? evidence.error;
@@ -96,6 +101,45 @@ export function EdgeEvidencePage() {
         </Card>
       </div>
 
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="text-base">Operator necessity</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-wrap items-end gap-3">
+          <div className="w-48">
+            <Select value={selectedNecessity} onValueChange={setManualNecessity}>
+              <SelectTrigger>
+                <SelectValue placeholder="Necessity" />
+              </SelectTrigger>
+              <SelectContent>
+                {NECESSITY_OPTIONS.map((value) => (
+                  <SelectItem key={value} value={value}>
+                    {value}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <Button
+            size="sm"
+            disabled={
+              patchNecessity.isPending || selectedNecessity === (edge.data.necessity ?? 'unknown')
+            }
+            onClick={() =>
+              patchNecessity.mutate({
+                edgeId: edge.data.edge_id,
+                necessity: selectedNecessity,
+              })
+            }
+          >
+            Apply annotation
+          </Button>
+          <p className="w-full text-xs text-muted-foreground">
+            Operator PATCH only — suggestions never auto-mutate necessity.
+          </p>
+        </CardContent>
+      </Card>
+
       {hintForEdge ? (
         <Card className="mb-6">
           <CardHeader>
@@ -108,10 +152,6 @@ export function EdgeEvidencePage() {
               {' '}(confidence {formatConfidence(hintForEdge.confidence)})
             </p>
             <p className="text-muted-foreground">{hintForEdge.rationale}</p>
-            <p className="text-xs text-muted-foreground">
-              Suggest-only heuristic — accepting writes an operator annotation via PATCH; nothing is
-              auto-mutated.
-            </p>
             <Button
               size="sm"
               disabled={patchNecessity.isPending}
@@ -138,13 +178,19 @@ export function EdgeEvidencePage() {
           <CardContent className="space-y-2 text-sm">
             <p>
               Source:{' '}
-              <Link to={`/entities/${encodeURIComponent(edge.data.source_id)}`} className="font-mono text-primary hover:underline">
+              <Link
+                to={`/entities/${encodeURIComponent(edge.data.source_id)}`}
+                className="font-mono text-primary hover:underline"
+              >
                 {edge.data.source_id}
               </Link>
             </p>
             <p>
               Target:{' '}
-              <Link to={`/entities/${encodeURIComponent(edge.data.target_id)}`} className="font-mono text-primary hover:underline">
+              <Link
+                to={`/entities/${encodeURIComponent(edge.data.target_id)}`}
+                className="font-mono text-primary hover:underline"
+              >
                 {edge.data.target_id}
               </Link>
             </p>

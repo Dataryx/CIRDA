@@ -52,6 +52,20 @@ class NecessityHintListResponse(BaseModel):
     mode: str = "suggest_only"
 
 
+class NecessityAutoMutateRequest(BaseModel):
+    source_id: str = Field(min_length=1)
+    as_of: datetime | None = None
+
+
+class NecessityAutoMutateResponse(BaseModel):
+    source_id: str
+    mode: str
+    min_confidence: float
+    allowed_labels: list[str]
+    candidates: int
+    applied: list[dict[str, Any]]
+
+
 router = APIRouter(prefix="/edges", tags=["edges"])
 
 
@@ -83,10 +97,38 @@ async def necessity_suggestions(
     as_of: datetime | None = Query(None),
 ) -> NecessityHintListResponse:
     items = await container.edge_service.necessity_suggestions(source_id, as_of=as_of)
+    mode = (
+        "auto_mutate_available"
+        if container.settings.necessity_auto_mutate_enabled
+        else "suggest_only"
+    )
     return NecessityHintListResponse(
         source_id=source_id,
         items=[NecessityHintSchema(**i) for i in items],
+        mode=mode,
     )
+
+
+@router.post("/necessity-auto-mutate", response_model=NecessityAutoMutateResponse)
+async def necessity_auto_mutate(
+    body: NecessityAutoMutateRequest,
+    container: ContainerDep,
+    principal: RequireAnalyst,
+) -> NecessityAutoMutateResponse:
+    try:
+        result = await container.edge_service.auto_mutate_necessity(
+            body.source_id, as_of=body.as_of
+        )
+    except PermissionError as exc:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, str(exc)) from exc
+    await container.audit_service.log(
+        principal_id=principal.principal_id,
+        action="edge.necessity_auto_mutate",
+        resource_type="entity",
+        resource_id=body.source_id,
+        details={"applied": len(result["applied"]), "candidates": result["candidates"]},
+    )
+    return NecessityAutoMutateResponse(**result)
 
 
 @router.get("/{edge_id}", response_model=EdgeResponse)

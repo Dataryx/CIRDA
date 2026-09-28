@@ -4,8 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from cirda_core.domain.entity import Entity
-from cirda_core.domain.enums import EntityType, EvidenceChannel
+from cirda_core.domain.enums import EvidenceChannel
 from cirda_core.resolution.entity_resolver import EntityResolver
 
 from cirda_ingest.pipeline.dead_letter import PermanentIngestError
@@ -35,16 +34,13 @@ async def test_normalize_invalid_payload_goes_to_permanent_error(pipeline) -> No
 
 
 @pytest.mark.asyncio
-async def test_resolve_stage_maps_aliases(pipeline) -> None:
+async def test_resolve_stage_maps_aliases(pipeline, memory_sink) -> None:
+    memory_sink.register_memory_alias("canonical-a", "alias-a")
+    from cirda_core.resolution.entity_resolver import EntityResolver
+
     resolver = EntityResolver()
-    resolver.register(
-        Entity(
-            entity_id="canonical-a",
-            entity_type=EntityType.SERVICE,
-            name="A",
-            aliases=frozenset(["alias-a"]),
-        )
-    )
+    for entity in await memory_sink.load_entities_with_aliases():
+        resolver.register(entity)
     pipeline._resolver = resolver
 
     raw = sample_trace_raw("s2", source_id="alias-a", target_id="svc-b")

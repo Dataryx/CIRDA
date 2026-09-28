@@ -11,12 +11,14 @@ from cirda_core.decision.explanation import explain_decision
 from cirda_core.decision.gate import evaluate_gate_from_layers
 from cirda_core.decision.probe_planner import estimate_probe_delta_c, plan_probes
 from cirda_core.domain.enums import EvidenceChannel, GraphLayer, Verdict
+from cirda_core.resolution.ambiguity import detect_identity_ambiguity
 from cirda_core.version import ENGINE_VERSION
 
 from cirda_api.db.repositories.decision import DecisionRepository
 from cirda_api.db.repositories.evidence import EvidenceRepository
 from cirda_api.services.coverage_service import CoverageService
 from cirda_api.services.graph_service import GraphService
+from cirda_api.services.ingest_service import IngestService
 from cirda_api.services.policy import build_policy
 from cirda_api.settings import Settings
 
@@ -29,12 +31,14 @@ class DecisionService:
         coverage_service: CoverageService,
         evidence_repo: EvidenceRepository,
         settings: Settings,
+        ingest_service: IngestService | None = None,
     ) -> None:
         self.decision_repo = decision_repo
         self.graph_service = graph_service
         self.coverage_service = coverage_service
         self.evidence_repo = evidence_repo
         self.settings = settings
+        self.ingest_service = ingest_service
 
     async def evaluate(
         self,
@@ -53,6 +57,7 @@ class DecisionService:
             as_of=as_of,
             scope_entity_id=entity_id,
         )
+        identity = await self._identity_ambiguity(entity_id)
         gate = evaluate_gate_from_layers(
             confirmed_graph=g_c,
             possible_graph=g_p,
@@ -60,12 +65,14 @@ class DecisionService:
             coverage=coverage_est["coverage"],
             policy=policy,
             ingest_lag_seconds=coverage_inputs.ingest_lag_seconds,
+            ambiguous_identity=identity.is_ambiguous,
         )
         explanation = explain_decision(
             gate,
             entity_id,
             ingest_lag_seconds=coverage_inputs.ingest_lag_seconds,
             max_ingest_lag_seconds=policy.max_ingest_lag_seconds,
+            identity_detail=identity.detail or None,
         )
         blast = await self._blast_summary(entity_id, as_of=as_of)
         rationale: dict[str, Any] = {
@@ -140,6 +147,11 @@ class DecisionService:
                 continue
         return channels
 
+    async def _identity_ambiguity(self, entity_id: str):
+        rows, _ = await self.coverage_service.entity_repo.list_entities(limit=10_000)
+        domain = [self.coverage_service.entity_repo.to_domain(r) for r in rows]
+        return detect_identity_ambiguity(entity_id=entity_id, entities=domain)
+
     async def apply_probes(
         self,
         entity_id: str,
@@ -148,9 +160,11 @@ class DecisionService:
         as_of: datetime | None = None,
     ) -> dict[str, Any]:
         """
-        Apply planned probes by lifting channel suppression (not live collectors).
+        Apply planned probes.
 
-        Requires probe_planning_enabled and probe_execution_enabled.
+        Always lifts channel suppression when enabled. When
+        ``probe_collector_enabled`` is on, also runs live HTTP probes against
+        entity ``metadata.probe_url`` and ingests real evidence on success.
         """
         if not self.settings.probe_execution_enabled:
             raise PermissionError("probe execution is disabled")
@@ -173,6 +187,29 @@ class DecisionService:
         )
         expected = estimate_probe_delta_c(inputs, frozenset(parsed))
         await self.coverage_service.restore_channels_for_probe(entity_id, parsed)
+
+        mode = "suppression_lift"
+        events_ingested = 0
+        collector_details: list[dict[str, Any]] = []
+        if self.settings.probe_collector_enabled:
+            mode = "collector_probe"
+            entity = await self.coverage_service.entity_repo.get_entity(entity_id)
+            if entity is None:
+                raise KeyError(entity_id)
+            from cirda_api.services.probe_collectors import collect_http_probe_events
+
+            events, collector_details = await collect_http_probe_events(
+                entity_id=entity_id,
+                channels=parsed,
+                entity=entity,
+            )
+            if self.ingest_service is None:
+                raise RuntimeError("ingest service required for collector probes")
+            for event in events:
+                result = await self.ingest_service.ingest_event(event)
+                if result.get("created"):
+                    events_ingested += 1
+
         after, _ = await self.coverage_service.estimate_with_inputs(
             as_of=as_of,
             scope_entity_id=entity_id,
@@ -181,11 +218,13 @@ class DecisionService:
         return {
             "entity_id": entity_id,
             "channels": [ch.value for ch in parsed],
-            "mode": "suppression_lift",
+            "mode": mode,
             "coverage_before": before["coverage"],
             "coverage_after": after["coverage"],
             "expected_delta_c": round(expected, 6),
             "actual_delta_c": round(actual, 6),
+            "events_ingested": events_ingested,
+            "collector_details": collector_details,
             "suppressed_channels_after": after["suppressed_channels"],
             "as_of": as_of,
         }

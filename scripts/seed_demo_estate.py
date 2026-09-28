@@ -5,9 +5,9 @@ Seed a realistic demo agent estate for CIRDA local development.
 Scenarios:
   - UNSAFE: invoice-reconciler-agent (critical downstream deps)
   - SAFE: legacy-csv-export-agent (isolated)
-  - INDETERMINATE: vendor-risk-agent (ambiguous identity, low coverage)
+  - INDETERMINATE: vendor-risk-agent (alias collision + low coverage)
   - Mediated dependency chain (orchestrator -> mediator -> payment-api)
-  - Ambiguous identity (vendor-risk-agent / vendor_risk alias)
+  - Ambiguous identity (vendor-risk-agent / vendor-risk-legacy share alias)
   - Decaying edge (old trace on legacy export path)
   - Suppression scenario (messaging channel gap)
 
@@ -72,7 +72,16 @@ def _entities() -> list[dict[str, Any]]:
             "entity_type": "agent",
             "name": "Vendor Risk Agent",
             "criticality": "high",
-            "metadata": {"team": "risk", "aliases": ["vendor_risk"], SEED_MARKER: True},
+            "aliases": ["vendor_risk", "vrisk"],
+            "metadata": {"team": "risk", SEED_MARKER: True},
+        },
+        {
+            "entity_id": "vendor-risk-legacy",
+            "entity_type": "agent",
+            "name": "Vendor Risk Legacy",
+            "criticality": "medium",
+            "aliases": ["vrisk"],
+            "metadata": {"team": "risk", "note": "alias collision with vendor-risk-agent", SEED_MARKER: True},
         },
         {
             "entity_id": "payment-orchestrator-agent",
@@ -454,8 +463,8 @@ Examples:
 Verdict-path agents created:
   invoice-reconciler-agent  -> UNSAFE (evaluate at as_of=now)
   legacy-csv-export-agent   -> SAFE (evaluate at as_of=now)
-  vendor-risk-agent         -> INDETERMINATE (target-scoped silent DB/messaging
-                              channels drop coverage below C_min=0.85 at `now`)
+  vendor-risk-agent         -> INDETERMINATE (alias collision with vendor-risk-legacy
+                              on `vrisk` + target-scoped silent DB/messaging below C_min)
         """,
     )
     parser.add_argument(

@@ -35,3 +35,10 @@ class EntityResolver:
     def resolve_or_passthrough(self, key: str) -> str:
         match = self.resolve(key)
         return match.entity_id if match else key
+
+    def resolve_exact_or_passthrough(self, key: str) -> str:
+        """Exact unique alias/id match only (no fuzzy). Used by ingest paths."""
+        from cirda_core.resolution.strategies import ExactMatchStrategy
+
+        match = ExactMatchStrategy().resolve(key, self._index)
+        return match.entity_id if match else key

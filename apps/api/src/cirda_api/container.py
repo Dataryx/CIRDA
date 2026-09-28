@@ -84,7 +84,14 @@ def build_container(settings: Settings, session: AsyncSession | None = None) -> 
     coverage_service = CoverageService(entity_repo, evidence_repo, coverage_repo, settings)
     ingest_service = IngestService(evidence_repo, edge_repo, entity_repo, policy, publisher)
     analysis_service = AnalysisService(graph_service, entity_repo, settings)
-    decision_service = DecisionService(decision_repo, graph_service, coverage_service, evidence_repo, settings)
+    decision_service = DecisionService(
+        decision_repo,
+        graph_service,
+        coverage_service,
+        evidence_repo,
+        settings,
+        ingest_service=ingest_service,
+    )
     calibration_service = CalibrationService(calibration_repo, settings)
     benchmark_service = BenchmarkService(benchmark_repo)
     audit_service = AuditService(audit_repo)

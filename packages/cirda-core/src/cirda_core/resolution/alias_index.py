@@ -10,18 +10,24 @@ class AliasIndex:
     """Index entity IDs and aliases for lookup."""
 
     def __init__(self) -> None:
-        self._by_key: dict[str, str] = {}
+        self._by_key: dict[str, set[str]] = {}
         self._entities: dict[str, Entity] = {}
 
     def add(self, entity: Entity) -> None:
         self._entities[entity.entity_id] = entity
-        self._by_key[normalized_key(entity.entity_id)] = entity.entity_id
-        self._by_key[normalized_key(entity.name)] = entity.entity_id
-        for alias in entity.aliases:
-            self._by_key[normalized_key(alias)] = entity.entity_id
+        for raw in (entity.entity_id, entity.name, *entity.aliases):
+            key = normalized_key(raw)
+            self._by_key.setdefault(key, set()).add(entity.entity_id)
 
     def lookup(self, key: str) -> str | None:
-        return self._by_key.get(normalized_key(key))
+        """Return canonical id only when the key uniquely maps to one entity."""
+        owners = self._by_key.get(normalized_key(key), set())
+        if len(owners) == 1:
+            return next(iter(owners))
+        return None
+
+    def owners(self, key: str) -> frozenset[str]:
+        return frozenset(self._by_key.get(normalized_key(key), set()))
 
     def get_entity(self, entity_id: str) -> Entity | None:
         return self._entities.get(entity_id)

@@ -12,7 +12,15 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 from cirda_core.domain.edge import DependencyEdge
-from cirda_core.domain.enums import EntityType, EvidenceChannel, GraphLayer, Necessity, Relation
+from cirda_core.domain.entity import Entity
+from cirda_core.domain.enums import (
+    Criticality,
+    EntityType,
+    EvidenceChannel,
+    GraphLayer,
+    Necessity,
+    Relation,
+)
 from cirda_core.domain.event import EvidenceEvent
 
 
@@ -36,6 +44,16 @@ class EntityRow(Base):
     criticality: Mapped[str] = mapped_column(String(16), nullable=False, default="unknown")
     created_at: Mapped[datetime] = mapped_column(TzDateTime, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(TzDateTime, nullable=False)
+
+
+class AliasRow(Base):
+    __tablename__ = "aliases"
+
+    alias_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    entity_id: Mapped[str] = mapped_column(String(128), ForeignKey("entities.entity_id"), index=True)
+    alias: Mapped[str] = mapped_column(String(512), nullable=False, index=True)
+    source: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(TzDateTime, nullable=False)
 
 
 class EvidenceRow(Base):
@@ -109,6 +127,7 @@ class _MemoryTables:
     evidence: dict[str, EvidenceEvent] = field(default_factory=dict)
     idempotency_index: dict[str, str] = field(default_factory=dict)
     entities: set[str] = field(default_factory=set)
+    aliases: dict[str, set[str]] = field(default_factory=dict)
     edges: dict[str, dict[str, Any]] = field(default_factory=dict)
     channel_counts: dict[tuple[str, str], int] = field(default_factory=dict)
 
@@ -133,6 +152,55 @@ class PostgresSink:
     async def close(self) -> None:
         if self._engine is not None:
             await self._engine.dispose()
+
+    async def load_entities_with_aliases(self) -> list[Entity]:
+        """Load entities and aliases for the ingest-time EntityResolver index."""
+        if self._memory is not None:
+            return [
+                Entity(
+                    entity_id=eid,
+                    entity_type=EntityType.SERVICE,
+                    name=eid,
+                    criticality=Criticality.UNKNOWN,
+                    aliases=frozenset(self._memory.aliases.get(eid, set())),
+                )
+                for eid in sorted(self._memory.entities)
+            ]
+
+        assert self._session_factory is not None
+        async with self._session_factory() as session:
+            entities = (await session.execute(select(EntityRow))).scalars().all()
+            aliases = (await session.execute(select(AliasRow))).scalars().all()
+        by_entity: dict[str, set[str]] = {e.entity_id: set() for e in entities}
+        for row in aliases:
+            by_entity.setdefault(row.entity_id, set()).add(row.alias)
+        result: list[Entity] = []
+        for row in entities:
+            try:
+                etype = EntityType(row.entity_type)
+            except ValueError:
+                etype = EntityType.SERVICE
+            try:
+                crit = Criticality(row.criticality)
+            except ValueError:
+                crit = Criticality.UNKNOWN
+            result.append(
+                Entity(
+                    entity_id=row.entity_id,
+                    entity_type=etype,
+                    name=row.name,
+                    criticality=crit,
+                    aliases=frozenset(by_entity.get(row.entity_id, set())),
+                )
+            )
+        return result
+
+    def register_memory_alias(self, entity_id: str, alias: str) -> None:
+        """Test helper: register an alias in memory mode."""
+        if self._memory is None:
+            raise RuntimeError("register_memory_alias requires memory_mode")
+        self._memory.entities.add(entity_id)
+        self._memory.aliases.setdefault(entity_id, set()).add(alias)
 
     async def persist_batch(self, items: list[PersistItem]) -> PersistResult:
         if self._memory is not None:
@@ -255,7 +323,12 @@ class PostgresSink:
         if existing:
             existing.layer = edge.layer.value
             existing.confidence = edge.confidence
-            existing.necessity = edge.necessity.value
+            # Preserve operator annotations when fusion still reports unknown.
+            if not (
+                existing.necessity != Necessity.UNKNOWN.value
+                and edge.necessity == Necessity.UNKNOWN
+            ):
+                existing.necessity = edge.necessity.value
             existing.evidence_count = edge.evidence_count
             existing.last_observed_at = valid_from
             existing.updated_at = now
@@ -331,10 +404,19 @@ class PostgresSink:
 
             if item.edge is not None:
                 key = item.edge.edge_id or f"{item.edge.source_id}->{item.edge.target_id}:{item.edge.relation.value}"
+                existing = self._memory.edges.get(key)
+                necessity = item.edge.necessity.value
+                if (
+                    existing
+                    and existing.get("necessity", "unknown") != Necessity.UNKNOWN.value
+                    and item.edge.necessity == Necessity.UNKNOWN
+                ):
+                    necessity = existing["necessity"]
                 self._memory.edges[key] = {
                     "edge_id": key,
                     "layer": item.edge.layer.value,
                     "confidence": item.edge.confidence,
+                    "necessity": necessity,
                 }
                 ch_key = (key, event.channel.value)
                 self._memory.channel_counts[ch_key] = self._memory.channel_counts.get(ch_key, 0) + 1

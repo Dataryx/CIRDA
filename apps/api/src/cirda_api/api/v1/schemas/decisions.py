@@ -37,6 +37,8 @@ class ProbeApplyResult(ApiModel):
     coverage_after: float
     expected_delta_c: float
     actual_delta_c: float
+    events_ingested: int = 0
+    collector_details: list[dict[str, Any]] = Field(default_factory=list)
     suppressed_channels_after: list[str] = Field(default_factory=list)
     as_of: datetime | None = None
 

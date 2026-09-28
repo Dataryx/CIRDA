@@ -7,7 +7,8 @@ from typing import Any
 
 from cirda_core.domain.enums import Necessity
 from cirda_core.graph.kernel import build_digraph
-from cirda_core.graph.necessity_suggester import suggest_necessity
+from cirda_core.graph.necessity_applier import select_auto_mutations
+from cirda_core.graph.necessity_suggester import NecessityHint, suggest_necessity
 
 from cirda_api.db.repositories.edge import EdgeRepository
 from cirda_api.db.repositories.entity import EntityRepository
@@ -58,6 +59,24 @@ class EdgeService:
             raise ValueError(f"invalid necessity: {necessity}") from exc
         return await self.edge_repo.update_necessity(edge_id, parsed)
 
+    async def _compute_hints(
+        self,
+        source_id: str,
+        *,
+        as_of: datetime | None = None,
+    ) -> list[NecessityHint]:
+        entities, _ = await self.entity_repo.list_entities(limit=10_000)
+        edges_raw, _ = await self.edge_repo.list_edges(as_of=as_of, limit=50_000)
+        domain_entities = [self.entity_repo.to_domain(e) for e in entities]
+        domain_edges = [EdgeRepository.to_domain(e) for e in edges_raw]
+        graph = build_digraph(domain_entities, domain_edges, layer=None)
+        policy = build_policy(self.settings)
+        return suggest_necessity(
+            graph,
+            source_id,
+            criticality_threshold=policy.critical_threshold,
+        )
+
     async def necessity_suggestions(
         self,
         source_id: str,
@@ -65,18 +84,7 @@ class EdgeService:
         as_of: datetime | None = None,
     ) -> list[dict[str, Any]]:
         """Suggest-only necessity hints for UNKNOWN edges under source_id."""
-        entities, _ = await self.entity_repo.list_entities(limit=10_000)
-        edges_raw, _ = await self.edge_repo.list_edges(as_of=as_of, limit=50_000)
-        domain_entities = [self.entity_repo.to_domain(e) for e in entities]
-        # Include confirmed ∪ possible (full estate view for hints).
-        domain_edges = [EdgeRepository.to_domain(e) for e in edges_raw]
-        graph = build_digraph(domain_entities, domain_edges, layer=None)
-        policy = build_policy(self.settings)
-        hints = suggest_necessity(
-            graph,
-            source_id,
-            criticality_threshold=policy.critical_threshold,
-        )
+        hints = await self._compute_hints(source_id, as_of=as_of)
         return [
             {
                 "edge_id": h.edge_id,
@@ -90,6 +98,47 @@ class EdgeService:
             }
             for h in hints
         ]
+
+    async def auto_mutate_necessity(
+        self,
+        source_id: str,
+        *,
+        as_of: datetime | None = None,
+    ) -> dict[str, Any]:
+        """Apply high-confidence necessity hints when auto-mutate is enabled."""
+        if not self.settings.necessity_auto_mutate_enabled:
+            raise PermissionError("necessity auto-mutate is disabled")
+
+        hints = await self._compute_hints(source_id, as_of=as_of)
+        mutations = select_auto_mutations(
+            hints,
+            min_confidence=self.settings.necessity_auto_min_confidence,
+            allowed_labels=self.settings.necessity_auto_allowed_set,
+        )
+        applied: list[dict[str, Any]] = []
+        for mutation in mutations:
+            row = await self.edge_repo.update_necessity(
+                mutation.edge_id,
+                Necessity(mutation.to_necessity),
+            )
+            if row:
+                applied.append(
+                    {
+                        "edge_id": mutation.edge_id,
+                        "from_necessity": mutation.from_necessity,
+                        "to_necessity": mutation.to_necessity,
+                        "confidence": mutation.confidence,
+                        "rationale": mutation.rationale,
+                    }
+                )
+        return {
+            "source_id": source_id,
+            "mode": "auto_mutate",
+            "min_confidence": self.settings.necessity_auto_min_confidence,
+            "allowed_labels": sorted(self.settings.necessity_auto_allowed_set),
+            "candidates": len(mutations),
+            "applied": applied,
+        }
 
     async def edge_evidence(self, edge_id: str, *, limit: int = 50) -> list[dict[str, Any]]:
         edge = await self.edge_repo.get_edge(edge_id)

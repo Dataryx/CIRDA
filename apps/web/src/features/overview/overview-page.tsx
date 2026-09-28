@@ -74,6 +74,18 @@ export function OverviewPage() {
                     Suppressed channels: {coverageData.suppressed_channels.join(', ')}
                   </p>
                 ) : null}
+                {typeof coverageData.ingest_lag_seconds === 'number' ? (
+                  <p>
+                    Ingest lag:{' '}
+                    <span className="font-mono font-medium">
+                      {Math.round(coverageData.ingest_lag_seconds)}s
+                    </span>
+                    {typeof coverageData.max_ingest_lag_seconds === 'number'
+                      ? ` / max ${Math.round(coverageData.max_ingest_lag_seconds)}s`
+                      : null}
+                    {coverageData.lag_exceeded ? ' (exceeds policy)' : null}
+                  </p>
+                ) : null}
                 {coverageData.as_of ? (
                   <p className="text-muted-foreground">As of {formatDateTime(coverageData.as_of)}</p>
                 ) : null}

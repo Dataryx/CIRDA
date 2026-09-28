@@ -32,6 +32,8 @@ class MemoryStore:
     """In-memory repository backing for dev/test without PostgreSQL."""
 
     entities: dict[str, Entity] = field(default_factory=dict)
+    entity_tenants: dict[str, str] = field(default_factory=dict)
+    entity_metadata: dict[str, dict[str, Any]] = field(default_factory=dict)
     aliases: dict[str, list[tuple[str, str | None]]] = field(default_factory=dict)
     edges: dict[str, dict[str, Any]] = field(default_factory=dict)
     edge_channel_evidence: dict[str, dict[str, dict[str, Any]]] = field(default_factory=dict)
@@ -52,6 +54,11 @@ class MemoryStore:
     principals: dict[str, dict[str, Any]] = field(default_factory=dict)
     _lock: threading.RLock = field(default_factory=threading.RLock)
 
+    def _entity_key(self, entity_id: str) -> str:
+        from cirda_api.security.tenant import get_current_tenant_id
+
+        return f"{get_current_tenant_id()}::{entity_id}"
+
     def upsert_entity_record(
         self,
         *,
@@ -60,32 +67,62 @@ class MemoryStore:
         name: str,
         criticality: str = "unknown",
         metadata: dict[str, Any] | None = None,
+        aliases: list[str] | None = None,
         now: datetime | None = None,
     ) -> dict[str, Any]:
         ts = now or _utcnow()
+        key = self._entity_key(entity_id)
         with self._lock:
-            existing = self.entities.get(entity_id)
+            existing = self.entities.get(key)
+            alias_set = frozenset(aliases or [])
+            if aliases is None and existing is not None:
+                alias_set = existing.aliases
             entity = Entity(
                 entity_id=entity_id,
                 entity_type=EntityType(entity_type),
                 name=name,
                 criticality=Criticality(criticality),
+                aliases=alias_set,
             )
-            self.entities[entity_id] = entity
+            self.entities[key] = entity
+            from cirda_api.security.tenant import get_current_tenant_id
+
+            tenant = get_current_tenant_id()
+            self.entity_tenants[key] = tenant
+            if metadata is not None or key not in self.entity_metadata:
+                self.entity_metadata[key] = dict(metadata or {})
+            if aliases is not None:
+                self.aliases[key] = [(a, "api") for a in aliases]
             record = {
                 "entity_id": entity_id,
                 "entity_type": entity_type,
                 "name": name,
                 "criticality": criticality,
-                "metadata": metadata or {},
+                "metadata": dict(self.entity_metadata.get(key, {})),
+                "aliases": [a[0] for a in self.aliases.get(key, [])],
+                "tenant_id": tenant,
                 "created_at": ts if existing is None else getattr(existing, "_created_at", ts),
                 "updated_at": ts,
             }
             return record
 
     def add_alias(self, entity_id: str, alias: str, source: str | None = None) -> None:
+        key = self._entity_key(entity_id)
         with self._lock:
-            self.aliases.setdefault(entity_id, []).append((alias, source))
+            existing_aliases = self.aliases.get(key, [])
+            if any(a == alias for a, _ in existing_aliases):
+                return
+            self.aliases.setdefault(key, []).append((alias, source))
+            entity = self.entities.get(key)
+            if entity is not None:
+                self.entities[key] = Entity(
+                    entity_id=entity.entity_id,
+                    entity_type=entity.entity_type,
+                    name=entity.name,
+                    criticality=entity.criticality,
+                    aliases=frozenset({*entity.aliases, alias}),
+                    metadata=entity.metadata,
+                )
 
     def add_evidence(self, event: EvidenceEvent, idempotency_key: str | None = None) -> tuple[EvidenceEvent, bool]:
         with self._lock:

@@ -16,7 +16,7 @@ from cirda_core.domain.event import EvidenceEvent
 from cirda_core.graph.layers import classify_layer
 from cirda_core.inference.candidate_generator import CandidatePair, generate_candidate_edge
 from cirda_core.inference.direction import translate_to_dependency_edge
-from cirda_core.inference.fusion import ChannelObservation, fuse_channels, has_direct_evidence
+from cirda_core.inference.fusion import ChannelObservation, fuse_channels, has_confirming_evidence
 from cirda_core.normalization.adapters import ALL_ADAPTERS
 from cirda_core.normalization.normalizer import Normalizer
 from cirda_core.ports.clock import Clock, SystemClock
@@ -153,8 +153,9 @@ class IngestPipeline:
     def _stage_resolve(self, item: PipelineItem) -> None:
         assert item.event is not None
         event = item.event
-        item.resolved_source = self._resolver.resolve_or_passthrough(event.source_id)
-        item.resolved_target = self._resolver.resolve_or_passthrough(event.target_id)
+        # Exact unique alias only — fuzzy ingest remaps are too aggressive for Kafka.
+        item.resolved_source = self._resolver.resolve_exact_or_passthrough(event.source_id)
+        item.resolved_target = self._resolver.resolve_exact_or_passthrough(event.target_id)
         if item.resolved_source != event.source_id or item.resolved_target != event.target_id:
             item.event = EvidenceEvent(
                 event_id=event.event_id,
@@ -204,7 +205,7 @@ class IngestPipeline:
             return
 
         confidence = fuse_channels(observations)
-        layer = classify_layer(confidence, has_direct_evidence(observations), self._policy)
+        layer = classify_layer(confidence, has_confirming_evidence(observations), self._policy)
         if layer is None:
             item.fused_edge = None
             return

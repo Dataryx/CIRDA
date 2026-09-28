@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
-import { fetchEntities, fetchEntity } from '@/api/endpoints/entities';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { createEntity, fetchEntities, fetchEntity } from '@/api/endpoints/entities';
 import { queryKeys } from '@/api/query-keys';
 
 export function useEntities(params: { offset?: number; limit?: number; entity_type?: string } = {}) {
@@ -14,5 +14,15 @@ export function useEntity(entityId: string) {
     queryKey: queryKeys.entities.detail(entityId),
     queryFn: () => fetchEntity(entityId),
     enabled: Boolean(entityId),
+  });
+}
+
+export function useCreateEntity() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createEntity,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.entities.all });
+    },
   });
 }

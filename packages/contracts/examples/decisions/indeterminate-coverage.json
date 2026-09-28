@@ -4,14 +4,14 @@
   "verdict": "INDETERMINATE",
   "coverage": 0.62,
   "truncated": false,
-  "reason_codes": ["COVERAGE_BELOW_C_MIN", "AMBIGUOUS_IDENTITY"],
+  "reason_codes": ["ambiguous_identity", "coverage_below_threshold"],
   "rationale": {
-    "summary": "Insufficient coverage and ambiguous entity identity; additional probes required.",
+    "summary": "Entity vendor-risk-agent is INDETERMINATE: unresolved identity ambiguity.",
     "details": [
-      "Coverage 0.62 below C_min 0.85",
-      "Alias vendor_risk may refer to vendor-risk-agent"
+      "ambiguous_identity: Entity vendor-risk-agent has unresolved identity conflict with: vendor_risk",
+      "coverage_below_threshold"
     ],
-    "reason_codes": ["COVERAGE_BELOW_C_MIN", "AMBIGUOUS_IDENTITY"],
+    "reason_codes": ["ambiguous_identity", "coverage_below_threshold"],
     "blast_radius": { "nodes": ["vendor-db"], "max_depth": 1 },
     "coverage_breakdown": { "trace": 0.55, "agent_framework": 0.40 },
     "suggested_runbook": []

@@ -35,6 +35,15 @@ class Settings(BaseSettings):
     hard_blocks: str = ""
     probe_planning_enabled: bool = False
     probe_execution_enabled: bool = False
+    probe_collector_enabled: bool = False
+
+    necessity_auto_mutate_enabled: bool = False
+    necessity_auto_min_confidence: float = 0.85
+    # Comma-separated Necessity values; default required-only for safety.
+    necessity_auto_allowed_labels: str = "required"
+
+    multi_tenant_enabled: bool = False
+    default_tenant_id: str = "default"
 
     auth_mode: Literal["dev", "jwt", "api_key"] = "dev"
     jwt_secret: str = "dev-secret-change-me"
@@ -84,6 +93,14 @@ class Settings(BaseSettings):
         if not self.hard_blocks.strip():
             return frozenset()
         return frozenset(b.strip() for b in self.hard_blocks.split(",") if b.strip())
+
+    @property
+    def necessity_auto_allowed_set(self) -> frozenset[str]:
+        if not self.necessity_auto_allowed_labels.strip():
+            return frozenset({"required"})
+        return frozenset(
+            p.strip() for p in self.necessity_auto_allowed_labels.split(",") if p.strip()
+        )
 
     @property
     def use_memory_store(self) -> bool:

@@ -73,3 +73,22 @@ def has_direct_evidence(observations: list[ChannelObservation]) -> bool:
         if profile.channel_class == ChannelClass.DIRECT:
             return True
     return False
+
+
+def has_confirming_evidence(observations: list[ChannelObservation]) -> bool:
+    """
+    Return True if any channel that may confirm an edge has observations.
+
+    Direct runtime telemetry and static declared channels can confirm;
+    weak channels alone cannot.
+    """
+    from cirda_core.domain.enums import ChannelClass
+
+    confirming = {ChannelClass.DIRECT, ChannelClass.DECLARED}
+    for obs in observations:
+        if obs.count <= 0:
+            continue
+        profile = get_channel_profile(obs.channel)
+        if profile.channel_class in confirming:
+            return True
+    return False

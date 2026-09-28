@@ -11,7 +11,7 @@ from cirda_core.domain.enums import EvidenceChannel, GraphLayer, Relation
 from cirda_core.domain.event import EvidenceEvent
 from cirda_core.graph.layers import classify_layer
 from cirda_core.inference.direction import translate_to_dependency_edge
-from cirda_core.inference.fusion import ChannelObservation, fuse_channels, has_direct_evidence
+from cirda_core.inference.fusion import ChannelObservation, fuse_channels, has_confirming_evidence
 from cirda_core.ports.clock import Clock
 
 
@@ -69,7 +69,7 @@ def generate_candidate_edge(
         for ch, count in pair.channel_counts.items()
     ]
     confidence = fuse_channels(observations)
-    layer = classify_layer(confidence, has_direct_evidence(observations), cfg)
+    layer = classify_layer(confidence, has_confirming_evidence(observations), cfg)
     if layer is None:
         return None
 

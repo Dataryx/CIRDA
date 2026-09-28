@@ -24,13 +24,13 @@ def can_confirm_layer(observations: list[ChannelObservation]) -> bool:
     """
     Determine if observations can support confirmed layer.
 
-    Weak channels alone cannot confirm.
+    Weak channels alone cannot confirm. Direct and declared channels can.
     """
     if weak_only_observations(observations):
         return False
-    from cirda_core.inference.fusion import has_direct_evidence
+    from cirda_core.inference.fusion import has_confirming_evidence
 
-    return has_direct_evidence(observations)
+    return has_confirming_evidence(observations)
 
 
 def max_weak_fused_confidence(observations: list[ChannelObservation]) -> float:

@@ -12,6 +12,19 @@ interface GraphViewerProps {
   height?: number;
 }
 
+function necessityClass(necessity: string | undefined): string {
+  switch (necessity) {
+    case 'optional':
+    case 'redundant':
+      return 'non-load-bearing';
+    case 'required':
+    case 'fallback':
+      return 'load-bearing';
+    default:
+      return 'necessity-unknown';
+  }
+}
+
 function toElements(nodes: GraphNode[], edges: GraphEdge[]): ElementDefinition[] {
   const nodeElements: ElementDefinition[] = nodes.map((node) => ({
     data: {
@@ -22,17 +35,22 @@ function toElements(nodes: GraphNode[], edges: GraphEdge[]): ElementDefinition[]
     },
   }));
 
-  const edgeElements: ElementDefinition[] = edges.map((edge) => ({
-    data: {
-      id: edge.edge_id,
-      source: edge.source_id,
-      target: edge.target_id,
-      label: edge.relation,
-      layer: edge.layer,
-      confidence: edge.confidence,
-    },
-    classes: edge.layer === 'possible' ? 'possible-edge' : 'confirmed-edge',
-  }));
+  const edgeElements: ElementDefinition[] = edges.map((edge) => {
+    const layerClass = edge.layer === 'possible' ? 'possible-edge' : 'confirmed-edge';
+    const necClass = necessityClass(edge.necessity);
+    return {
+      data: {
+        id: edge.edge_id,
+        source: edge.source_id,
+        target: edge.target_id,
+        label: edge.relation,
+        layer: edge.layer,
+        confidence: edge.confidence,
+        necessity: edge.necessity ?? 'unknown',
+      },
+      classes: `${layerClass} ${necClass}`,
+    };
+  });
 
   return [...nodeElements, ...edgeElements];
 }
@@ -69,9 +87,9 @@ export function GraphViewer({ nodes, edges, highlightEntityId, height = 520 }: G
         {
           selector: 'edge.confirmed-edge',
           style: {
-            width: 2,
-            'line-color': '#7c3aed',
-            'target-arrow-color': '#7c3aed',
+            width: 2.5,
+            'line-color': '#0072B2',
+            'target-arrow-color': '#0072B2',
             'target-arrow-shape': 'triangle',
             'curve-style': 'bezier',
           },
@@ -80,11 +98,26 @@ export function GraphViewer({ nodes, edges, highlightEntityId, height = 520 }: G
           selector: 'edge.possible-edge',
           style: {
             width: 2,
-            'line-color': '#a78bfa',
+            'line-color': '#56B4E9',
             'line-style': 'dashed',
-            'target-arrow-color': '#a78bfa',
+            'target-arrow-color': '#56B4E9',
             'target-arrow-shape': 'triangle',
             'curve-style': 'bezier',
+          },
+        },
+        {
+          selector: 'edge.non-load-bearing',
+          style: {
+            width: 1,
+            opacity: 0.35,
+            'line-style': 'dotted',
+          },
+        },
+        {
+          selector: 'edge.load-bearing',
+          style: {
+            width: 3,
+            opacity: 1,
           },
         },
         {

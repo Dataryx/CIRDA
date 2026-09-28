@@ -24,6 +24,7 @@ const navItems = [
   { to: '/decommission', label: 'Decommission', icon: Trash2 },
   { to: '/evidence', label: 'Evidence', icon: FileSearch },
   { to: '/coverage', label: 'Coverage', icon: Gauge },
+  { to: '/analysis', label: 'Analysis', icon: Activity },
   { to: '/benchmark', label: 'Benchmark', icon: Beaker },
   { to: '/calibration', label: 'Calibration', icon: Settings2 },
   { to: '/audit', label: 'Audit', icon: Shield },

@@ -2,16 +2,14 @@
 
 from __future__ import annotations
 
-import uuid
 from datetime import datetime, timezone
 from typing import Any
 
 from cirda_core.config.policy import PolicyConfig
-from cirda_core.domain.enums import EvidenceChannel, GraphLayer, Relation
 from cirda_core.domain.event import EvidenceEvent
 from cirda_core.graph.layers import classify_layer
 from cirda_core.inference.direction import translate_to_dependency_edge
-from cirda_core.inference.fusion import ChannelObservation, fuse_channels, has_direct_evidence
+from cirda_core.inference.fusion import ChannelObservation, fuse_channels, has_confirming_evidence
 from cirda_core.normalization.adapters import (
     AgentFrameworkAdapter,
     DatabaseAdapter,
@@ -58,11 +56,12 @@ class IngestService:
         return await self.ingest_event(event, idempotency_key=idempotency_key)
 
     async def ingest_event(self, event: EvidenceEvent, *, idempotency_key: str | None = None) -> dict[str, Any]:
-        stored, created = await self.evidence_repo.add_event(event, idempotency_key=idempotency_key)
+        resolved = await self._resolve_event_ids(event)
+        stored, created = await self.evidence_repo.add_event(resolved, idempotency_key=idempotency_key)
         if not created:
             return {"event": self.evidence_repo._event_dict(stored), "created": False, "edge_updated": False}
 
-        await self._ensure_entities(event)
+        await self._ensure_entities(resolved)
         edge_updated = await self._update_edge_from_event(stored)
         if self.publisher:
             await self.publisher.publish_evidence(stored)
@@ -70,7 +69,30 @@ class IngestService:
             "event": self.evidence_repo._event_dict(stored),
             "created": True,
             "edge_updated": edge_updated,
+            "resolved_from": (
+                {"source_id": event.source_id, "target_id": event.target_id}
+                if (resolved.source_id != event.source_id or resolved.target_id != event.target_id)
+                else None
+            ),
         }
+
+    async def _resolve_event_ids(self, event: EvidenceEvent) -> EvidenceEvent:
+        """Rewrite source/target to canonical ids when uniquely aliased."""
+        source = await self.entity_repo.resolve_entity_id(event.source_id)
+        target = await self.entity_repo.resolve_entity_id(event.target_id)
+        if source == event.source_id and target == event.target_id:
+            return event
+        return EvidenceEvent(
+            event_id=event.event_id,
+            source_id=source,
+            target_id=target,
+            relation=event.relation,
+            channel=event.channel,
+            observed_at=event.observed_at,
+            source_type=event.source_type,
+            target_type=event.target_type,
+            payload_hash=event.payload_hash,
+        )
 
     async def _ensure_entities(self, event: EvidenceEvent) -> None:
         for eid, etype in (
@@ -93,7 +115,7 @@ class IngestService:
         )
         obs = [ChannelObservation(channel=event.channel, count=count, age_seconds=age)]
         confidence = fuse_channels(obs)
-        layer = classify_layer(confidence, has_direct_evidence(obs), self.policy)
+        layer = classify_layer(confidence, has_confirming_evidence(obs), self.policy)
         if layer is None:
             return False
 

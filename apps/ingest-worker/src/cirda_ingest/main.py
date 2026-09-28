@@ -61,6 +61,7 @@ class IngestWorker:
         configure_logging(self.settings)
         await self.sink.initialize()
         await self.dlq.connect()
+        await self._refresh_resolver()
 
         self._batcher = EventBatcher(
             self._handle_batch,
@@ -182,6 +183,18 @@ class IngestWorker:
         )
         self.health.last_error = None
         self.metrics.record_batch(time.perf_counter() - started)
+        # Refresh alias index periodically so API-created aliases resolve on Kafka path.
+        if self.health.events_processed % 50 == 0:
+            await self._refresh_resolver()
+
+    async def _refresh_resolver(self) -> None:
+        from cirda_core.resolution.entity_resolver import EntityResolver
+
+        resolver = EntityResolver()
+        for entity in await self.sink.load_entities_with_aliases():
+            resolver.register(entity)
+        self.pipeline._resolver = resolver
+        logger.info("alias_index_refreshed", entities=len(resolver.index.all_entities()))
 
     async def run_forever(self) -> None:
         await self.start()
