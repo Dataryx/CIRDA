@@ -313,7 +313,7 @@ def seed_entities_and_events(seeder: HttpSeeder) -> None:
         {
             "channel": "database",
             "health_score": 0.22,
-            "lag_seconds": 14400,
+            "lag_seconds": 2400,
             "suppression_suspected": True,
             "details": {
                 "reporting_sources": 1,
@@ -326,7 +326,7 @@ def seed_entities_and_events(seeder: HttpSeeder) -> None:
         {
             "channel": "messaging",
             "health_score": 0.35,
-            "lag_seconds": 3600,
+            "lag_seconds": 1800,
             "suppression_suspected": True,
             "details": {"reporting_sources": 2, "expected_sources": 5},
         }
@@ -341,7 +341,7 @@ def seed_entities_and_events(seeder: HttpSeeder) -> None:
         }
     )
     print("==> Annotating optional necessity (demo load-bearing vs optional path)")
-    # WRITES is retained: invoice→ledger stays load-bearing (UNSAFE).
+    # WRITES is retained: invoiceâ†’ledger stays load-bearing (UNSAFE).
     # Mark a secondary retained edge optional so critical blast skips it.
     seeder.patch_edge_necessity(
         "invoice-reconciler-agent->invoice-queue:publishes",
@@ -404,11 +404,11 @@ def seed_via_direct(*, force_events: bool) -> None:
             if result["created"]:
                 created += 1
 
-        # Channel health: database/messaging silent → vendor-risk coverage gap at `now`.
+        # Channel health: database/messaging silent â†’ vendor-risk coverage gap at `now`.
         await container.coverage_service.coverage_repo.upsert_channel_health(
             "database",
             health_score=0.22,
-            lag_seconds=14_400,
+            lag_seconds=2_400,
             suppression_suspected=True,
             details={
                 "reporting_sources": 1,
@@ -419,7 +419,7 @@ def seed_via_direct(*, force_events: bool) -> None:
         await container.coverage_service.coverage_repo.upsert_channel_health(
             "messaging",
             health_score=0.35,
-            lag_seconds=3_600,
+            lag_seconds=1_800,
             suppression_suspected=True,
             details={"reporting_sources": 2, "expected_sources": 5},
         )

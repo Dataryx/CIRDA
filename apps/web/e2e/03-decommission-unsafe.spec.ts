@@ -18,9 +18,8 @@ test.describe('Decommission UNSAFE path', () => {
 
     await expect(page.getByRole('heading', { name: 'Blast radius (G_p)' })).toBeVisible();
     await expect(page.getByText('Critical reachable:')).toBeVisible();
-    await expect(
-      page.getByRole('link', { name: /invoice-queue|payment-api|payment-mediator-service/ }),
-    ).toBeVisible();
+    // invoice-queue is annotated optional in the demo estate, so only the ledger path is load-bearing.
+    await expect(page.getByRole('link', { name: 'ledger-db' }).first()).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Suggested runbook' })).toBeVisible();
     await expect(page.getByRole('cell', { name: 'report_and_remediate' })).toBeVisible();
   });

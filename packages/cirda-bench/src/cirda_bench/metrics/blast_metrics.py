@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import networkx as nx
-
 from cirda_core.analysis.blast_radius import compute_blast_radius
 from cirda_core.config.policy import PolicyConfig
 from cirda_core.graph.kernel import build_digraph

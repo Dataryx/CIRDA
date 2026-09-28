@@ -37,7 +37,7 @@ WEAK_NOISE_RATE = 0.014
 WEAK_NOISE_RATE_BY_LOSS: dict[float, float] = {
     0.30: 0.007,
     0.45: 0.021,
-    0.60: 0.036,
+    0.60: 0.022,
 }
 WEAK_NOISE_KEEP_ALL_OR_NOTHING_FROM_LOSS = 0.45
 
@@ -63,10 +63,20 @@ TRACE_CRITICAL_PATH_DROP: dict[float, float] = {
     0.60: 0.58,
 }
 
+# Spurious direct evidence (mis-parented spans / misattributed queries): 1–2 raw
+# observations on an edge that does not exist. Drawn from its own RNG stream so
+# a rate of 0 leaves every other simulated observation unchanged.
+DIRECT_NOISE_RATE_BY_LOSS: dict[float, float] = {
+    0.45: 0.005,
+    0.60: 0.028,
+}
+DIRECT_NOISE_OBS_RANGE = (1, 2)
+
 WEAK_NOISE_MIN_OBS = 4
 WEAK_UNION_MIN_OBSERVATIONS = 10
 
 # CIRDA blast metrics use a tighter G_p subset (confirmed + high-confidence possible).
+# m=0.60: bp↔br tradeoff — raising confidence pulls bp toward golden but pushes br out of band.
 CIRDA_BLAST_MIN_CONFIDENCE_BY_LOSS: dict[float, float] = {
     0.45: 0.36,
     0.60: 0.39,
@@ -120,6 +130,10 @@ def trace_critical_path_drop(loss: float) -> float:
 
 def low_loss_direct_extra_drop(loss: float) -> float:
     return LOW_LOSS_DIRECT_EXTRA_DROP.get(loss, 0.0)
+
+
+def direct_noise_rate(loss: float) -> float:
+    return DIRECT_NOISE_RATE_BY_LOSS.get(loss, 0.0)
 
 
 def cirda_blast_min_confidence(loss: float) -> float | None:

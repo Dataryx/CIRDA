@@ -5,12 +5,10 @@ from __future__ import annotations
 from typing import Any
 
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from cirda_api.db.models.channel_health import ChannelHealth as ChannelHealthModel
 from cirda_api.db.models.coverage import CoverageSnapshot
 from cirda_api.db.repositories.base import RepositoryBase, utcnow
-from cirda_api.memory.store import MemoryStore
 
 PROBE_RESTORE_PREFIX = "__probe_restore__:"
 
@@ -18,25 +16,29 @@ PROBE_RESTORE_PREFIX = "__probe_restore__:"
 class CoverageRepository(RepositoryBase):
     async def latest_snapshot(self) -> dict[str, Any] | None:
         if self.memory:
-            if not self.memory.coverage_snapshots:
+            rows = self.memory.iter_tenant_coverage_snapshots()
+            if not rows:
                 return None
-            return sorted(self.memory.coverage_snapshots, key=lambda s: s["captured_at"], reverse=True)[0]
+            return sorted(rows, key=lambda s: s["captured_at"], reverse=True)[0]
 
         assert self.session is not None
         result = await self.session.execute(
-            select(CoverageSnapshot).order_by(CoverageSnapshot.captured_at.desc()).limit(1)
+            select(CoverageSnapshot)
+            .where(CoverageSnapshot.tenant_id == self.tenant_id)
+            .order_by(CoverageSnapshot.captured_at.desc())
+            .limit(1)
         )
         row = result.scalar_one_or_none()
         return self._snapshot_dict(row) if row else None
 
     async def add_snapshot(self, record: dict[str, Any]) -> dict[str, Any]:
         if self.memory:
-            self.memory.coverage_snapshots.append(record)
-            return record
+            return self.memory.append_coverage_snapshot(record)
 
         assert self.session is not None
         row = CoverageSnapshot(
             snapshot_id=record["snapshot_id"],
+            tenant_id=self.tenant_id,
             coverage=record["coverage"],
             observed_entities=record["observed_entities"],
             total_entities=record["total_entities"],
@@ -46,31 +48,49 @@ class CoverageRepository(RepositoryBase):
         )
         self.session.add(row)
         await self.session.commit()
-        return record
+        return {**record, "tenant_id": self.tenant_id}
 
     async def list_snapshots(self, *, offset: int = 0, limit: int = 20) -> tuple[list[dict[str, Any]], int]:
         if self.memory:
-            rows = sorted(self.memory.coverage_snapshots, key=lambda s: s["captured_at"], reverse=True)
+            rows = sorted(
+                self.memory.iter_tenant_coverage_snapshots(),
+                key=lambda s: s["captured_at"],
+                reverse=True,
+            )
             total = len(rows)
             return rows[offset : offset + limit], total
 
         assert self.session is not None
-        q = select(CoverageSnapshot).order_by(CoverageSnapshot.captured_at.desc())
+        q = (
+            select(CoverageSnapshot)
+            .where(CoverageSnapshot.tenant_id == self.tenant_id)
+            .order_by(CoverageSnapshot.captured_at.desc())
+        )
         result = await self.session.execute(q.offset(offset).limit(limit))
         items = [self._snapshot_dict(r) for r in result.scalars().all()]
-        total = len((await self.session.execute(select(CoverageSnapshot))).scalars().all())
+        total = len(
+            (
+                await self.session.execute(
+                    select(CoverageSnapshot).where(CoverageSnapshot.tenant_id == self.tenant_id)
+                )
+            )
+            .scalars()
+            .all()
+        )
         return items, total
 
     async def list_channel_health(self) -> list[dict[str, Any]]:
         if self.memory:
             return [
                 row
-                for row in self.memory.channel_health.values()
+                for row in self.memory.iter_tenant_channel_health()
                 if not str(row.get("channel", "")).startswith(PROBE_RESTORE_PREFIX)
             ]
 
         assert self.session is not None
-        result = await self.session.execute(select(ChannelHealthModel))
+        result = await self.session.execute(
+            select(ChannelHealthModel).where(ChannelHealthModel.tenant_id == self.tenant_id)
+        )
         rows: list[dict[str, Any]] = []
         for r in result.scalars().all():
             if str(r.channel).startswith(PROBE_RESTORE_PREFIX):
@@ -93,16 +113,23 @@ class CoverageRepository(RepositoryBase):
                     "last_checked_at": r.last_checked_at,
                     "details": details,
                     "suppression_suspected": bool(details.get("suppression_suspected")),
+                    "tenant_id": r.tenant_id,
                 }
             )
         return rows
 
     async def list_probe_restorations(self, entity_id: str) -> set[str]:
         if self.memory:
-            return set(self.memory.probe_restorations.get(entity_id, set()))
+            return self.memory.get_probe_restorations(entity_id)
 
         assert self.session is not None
-        row = await self.session.get(ChannelHealthModel, f"{PROBE_RESTORE_PREFIX}{entity_id}")
+        result = await self.session.execute(
+            select(ChannelHealthModel).where(
+                ChannelHealthModel.tenant_id == self.tenant_id,
+                ChannelHealthModel.channel == f"{PROBE_RESTORE_PREFIX}{entity_id}",
+            )
+        )
+        row = result.scalar_one_or_none()
         if not row or not row.details:
             return set()
         try:
@@ -120,7 +147,7 @@ class CoverageRepository(RepositoryBase):
         existing = await self.list_probe_restorations(entity_id)
         merged = sorted(existing | {str(c) for c in channels})
         if self.memory:
-            self.memory.probe_restorations[entity_id] = set(merged)
+            self.memory.set_probe_restorations(entity_id, set(merged))
             return set(merged)
 
         await self.upsert_channel_health(
@@ -156,12 +183,18 @@ class CoverageRepository(RepositoryBase):
             "details": detail_payload,
         }
         if self.memory:
-            self.memory.channel_health[channel] = payload
+            self.memory.set_channel_health(channel, payload)
             return
 
         assert self.session is not None
         detail_str = json.dumps(detail_payload)
-        row = await self.session.get(ChannelHealthModel, channel)
+        result = await self.session.execute(
+            select(ChannelHealthModel).where(
+                ChannelHealthModel.tenant_id == self.tenant_id,
+                ChannelHealthModel.channel == channel,
+            )
+        )
+        row = result.scalar_one_or_none()
         if row:
             row.health_score = health_score
             row.lag_seconds = lag_seconds
@@ -170,6 +203,7 @@ class CoverageRepository(RepositoryBase):
         else:
             self.session.add(
                 ChannelHealthModel(
+                    tenant_id=self.tenant_id,
                     channel=channel,
                     health_score=health_score,
                     lag_seconds=lag_seconds,
@@ -183,6 +217,7 @@ class CoverageRepository(RepositoryBase):
     def _snapshot_dict(row: CoverageSnapshot) -> dict[str, Any]:
         return {
             "snapshot_id": row.snapshot_id,
+            "tenant_id": getattr(row, "tenant_id", "default"),
             "coverage": row.coverage,
             "observed_entities": row.observed_entities,
             "total_entities": row.total_entities,

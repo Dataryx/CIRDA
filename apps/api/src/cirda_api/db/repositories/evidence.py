@@ -6,11 +6,9 @@ from datetime import datetime
 from typing import Any
 
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from cirda_api.db.models.evidence import EvidenceEvent as EvidenceModel
 from cirda_api.db.repositories.base import RepositoryBase, utcnow
-from cirda_api.memory.store import MemoryStore
 from cirda_core.domain.enums import EntityType, EvidenceChannel, Relation
 from cirda_core.domain.event import EvidenceEvent
 
@@ -26,13 +24,23 @@ class EvidenceRepository(RepositoryBase):
             return self.memory.add_evidence(event, idempotency_key)
 
         assert self.session is not None
-        by_id = await self.session.get(EvidenceModel, event.event_id)
-        if by_id is not None:
-            return self._to_domain(by_id), False
+        tenant = self.tenant_id
+        by_id = await self.session.execute(
+            select(EvidenceModel).where(
+                EvidenceModel.event_id == event.event_id,
+                EvidenceModel.tenant_id == tenant,
+            )
+        )
+        existing_by_id = by_id.scalar_one_or_none()
+        if existing_by_id is not None:
+            return self._to_domain(existing_by_id), False
 
         if idempotency_key:
             existing = await self.session.execute(
-                select(EvidenceModel).where(EvidenceModel.idempotency_key == idempotency_key)
+                select(EvidenceModel).where(
+                    EvidenceModel.tenant_id == tenant,
+                    EvidenceModel.idempotency_key == idempotency_key,
+                )
             )
             row = existing.scalar_one_or_none()
             if row:
@@ -41,6 +49,7 @@ class EvidenceRepository(RepositoryBase):
         now = utcnow()
         model = EvidenceModel(
             event_id=event.event_id,
+            tenant_id=tenant,
             idempotency_key=idempotency_key,
             source_id=event.source_id,
             target_id=event.target_id,
@@ -58,11 +67,17 @@ class EvidenceRepository(RepositoryBase):
 
     async def get_event(self, event_id: str) -> dict[str, Any] | None:
         if self.memory:
-            ev = self.memory.evidence_events.get(event_id)
+            ev = self.memory.get_evidence(event_id)
             return self._event_dict(ev) if ev else None
 
         assert self.session is not None
-        row = await self.session.get(EvidenceModel, event_id)
+        result = await self.session.execute(
+            select(EvidenceModel).where(
+                EvidenceModel.event_id == event_id,
+                EvidenceModel.tenant_id == self.tenant_id,
+            )
+        )
+        row = result.scalar_one_or_none()
         return self._model_dict(row) if row else None
 
     async def list_events(
@@ -76,7 +91,7 @@ class EvidenceRepository(RepositoryBase):
         limit: int = 50,
     ) -> tuple[list[dict[str, Any]], int]:
         if self.memory:
-            rows = [self._event_dict(e) for e in self.memory.evidence_events.values()]
+            rows = [self._event_dict(e) for e in self.memory.iter_tenant_evidence()]
             if source_id:
                 rows = [r for r in rows if r["source_id"] == source_id]
             if target_id:
@@ -89,7 +104,7 @@ class EvidenceRepository(RepositoryBase):
             return rows[offset : offset + limit], total
 
         assert self.session is not None
-        q = select(EvidenceModel)
+        q = select(EvidenceModel).where(EvidenceModel.tenant_id == self.tenant_id)
         if source_id:
             q = q.where(EvidenceModel.source_id == source_id)
         if target_id:
@@ -113,7 +128,7 @@ class EvidenceRepository(RepositoryBase):
     ) -> int:
         if self.memory:
             count = 0
-            for ev in self.memory.evidence_events.values():
+            for ev in self.memory.iter_tenant_evidence():
                 if ev.source_id == source_id and ev.target_id == target_id and ev.channel == channel:
                     if as_of is None or ev.observed_at <= as_of:
                         count += 1
@@ -121,6 +136,7 @@ class EvidenceRepository(RepositoryBase):
 
         assert self.session is not None
         q = select(EvidenceModel).where(
+            EvidenceModel.tenant_id == self.tenant_id,
             EvidenceModel.source_id == source_id,
             EvidenceModel.target_id == target_id,
             EvidenceModel.channel == channel.value,
@@ -157,6 +173,7 @@ class EvidenceRepository(RepositoryBase):
             "payload_hash": row.payload_hash,
             "observed_at": row.observed_at,
             "ingested_at": row.ingested_at,
+            "tenant_id": getattr(row, "tenant_id", "default"),
         }
 
     @staticmethod

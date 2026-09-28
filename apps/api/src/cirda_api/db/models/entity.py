@@ -4,23 +4,23 @@ from __future__ import annotations
 
 from typing import Any
 
-from sqlalchemy import String
-
-from cirda_api.db.compat import JsonColumn
+from sqlalchemy import PrimaryKeyConstraint, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from cirda_api.db.base import Base
+from cirda_api.db.compat import JsonColumn
 from cirda_api.db.types import UTCDateTime
 
 
 class Entity(Base):
     __tablename__ = "entities"
+    __table_args__ = (PrimaryKeyConstraint("tenant_id", "entity_id"),)
 
-    entity_id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(128), nullable=False, default="default", index=True)
+    entity_id: Mapped[str] = mapped_column(String(128), nullable=False)
     entity_type: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
     name: Mapped[str] = mapped_column(String(512), nullable=False)
     criticality: Mapped[str] = mapped_column(String(16), nullable=False, default="unknown")
-    tenant_id: Mapped[str] = mapped_column(String(128), nullable=False, default="default", index=True)
     metadata_json: Mapped[dict[str, Any]] = mapped_column("metadata", JsonColumn, nullable=False, default=dict)
     created_at: Mapped[Any] = mapped_column(UTCDateTime, nullable=False)
     updated_at: Mapped[Any] = mapped_column(UTCDateTime, nullable=False)

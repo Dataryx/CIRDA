@@ -10,7 +10,8 @@ test.describe('Coverage health', () => {
   test('displays coverage metrics and channel health table', async ({ page }) => {
     const coverage = new CoveragePage(page);
     await coverage.open();
-    await expect(page.getByText('Current coverage')).toBeVisible();
+    await expect(page.getByText('Coverage C')).toBeVisible();
+    await expect(page.getByText('Ingest lag', { exact: true })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Channel health' })).toBeVisible();
   });
 });

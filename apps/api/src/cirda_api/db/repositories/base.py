@@ -23,3 +23,9 @@ class RepositoryBase:
     @property
     def is_memory(self) -> bool:
         return self.memory is not None
+
+    @property
+    def tenant_id(self) -> str:
+        from cirda_api.security.tenant import get_current_tenant_id
+
+        return get_current_tenant_id()

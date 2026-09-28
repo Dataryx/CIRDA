@@ -16,7 +16,8 @@ Mapping of CIRDA paper claims to code paths and test identifiers. PDF not includ
 | Blast radius analysis | `cirda_core.analysis.blast_radius` | `apps/api/tests/integration/test_analysis.py` |
 | Critical path enumeration | `critical_paths.py`; decision `paths`; `GET /analysis/paths` | `test_critical_paths.py`, `test_decision_flow.py` |
 | Zero false-SAFE under observability loss | `cirda_bench` harness | `test_zero_false_safe_at_30_45_60_loss.py` |
-| Table II benchmark shape | `cirda_bench.generator` | `test_reproduces_table_ii.py` |
+| Table II benchmark shape | `cirda_bench.generator` (incl. spurious direct evidence) | `test_reproduces_table_ii.py` (40/60 in tolerance, 20 structural xfails) |
+| Fused support reliability | `cirda_bench.metrics.reliability` (ECE / Brier vs simulator truth) | `test_reliability.py`; `scripts/support_reliability.py` |
 | Scalability shape (graph size) | `cirda_bench.scalability` | `test_scalability_shape.py` |
 | Decision explanation / runbook | `cirda_core.decision.explanation`, `runbook.py` | `apps/api/tests/unit/test_decision_service.py` |
 | Runbook execution tracking | Seed on evaluate; `GET/PATCH …/runbook` | `test_runbook.py`, `test_runbook_execution.py` |
@@ -25,13 +26,13 @@ Mapping of CIRDA paper claims to code paths and test identifiers. PDF not includ
 | Probe apply (suppression lift) | `POST /decisions/probes/apply`; `CoverageService.restore_channels_for_probe` | `test_decision_flow.py` |
 | Live collector probes | HTTP probe via `metadata.probe_url` when `CIRDA_PROBE_COLLECTOR_ENABLED` | `probe_collectors.py` |
 | Necessity auto-mutate | `necessity_applier.py`; `POST /edges/necessity-auto-mutate` (flag-gated) | `test_necessity_applier.py`, `test_necessity_auto_mutate.py` |
-| Multi-tenant isolation | `tenant_id` + `X-CIRDA-Tenant`; ADR 0006 | `test_multi_tenant.py` |
+| Multi-tenant isolation | Composite PKs + tenant-scoped edges/evidence/decisions/coverage; ADR 0006 Phase 2 (migrations 0007–0008) | `test_multi_tenant.py`, `test_multi_tenant_postgres.py` (needs `CIRDA_TEST_DATABASE_URL`) |
 | Analysis UI | Web `/analysis` over blast/reachability/paths APIs | `test_analysis.py` |
 | Necessity-aware critical traversal | `reachability.py` load-bearing filter; gate/blast | `test_necessity_load_bearing.py` |
 | Operator necessity annotation | `PATCH /api/v1/edges/{edge_id}`; preserved on re-ingest | `test_edge_necessity.py` |
 | Necessity suggestions (suggest-only) | `necessity_suggester.py`; `GET /edges/necessity-suggestions` | `test_necessity_suggester.py`, `test_necessity_suggestions.py` |
-| Calibrated support S as probability | N/A — documented limitation | README limitations section |
-| Distributed graph partition | Phase-1 logical tenants (`tenant_id`); not physical partition | ADR 0006, `test_multi_tenant.py` |
+| Calibrated support S as probability | N/A — documented product limitation (support ≠ causation) | README limitations section |
+| Distributed graph partition | Logical tenants with composite PKs; not physical shard | ADR 0006, `test_multi_tenant.py` |
 
 ## Partial / Simplified
 
@@ -39,10 +40,10 @@ Mapping of CIRDA paper claims to code paths and test identifiers. PDF not includ
 |------|-----|------------|
 | Probe planning | Apply lifts suppression; optional live HTTP collector probe when flagged | `CIRDA_PROBE_*` flags; requires `metadata.probe_url` for collector mode |
 | Necessity models | Suggest-only by default; optional auto-mutate of high-confidence `required` | `CIRDA_NECESSITY_AUTO_MUTATE_ENABLED` (off); UNKNOWN ≡ load-bearing |
-| Multi-tenant | Logical tenant isolation on entities (Phase 1) | `CIRDA_MULTI_TENANT_ENABLED`; ADR 0006 |
-| Weak signal weights | Heuristic vs full calibration | `calibration-guide.md` |
-| Causal inference | Support ≠ causation | Limitations footer on every report |
-| Table II residuals | Baseline method cells + CIRDA bp@0.60 still xfail | `KNOWN_GAPS` / `CALIBRATION.md`; CIRDA false_safe=0 exact |
+| Multi-tenant | Logical isolation: composite PKs + scoped edges/evidence/decisions/coverage | `CIRDA_MULTI_TENANT_ENABLED`; ADR 0006 Phase 2 |
+| Weak signal weights | Heuristic `r_k`/`τ_k`, measured not fitted: S is conservative on simulator truth (real rate ≥ S for S ≥ 0.2) | Reliability report in `CALIBRATION.md`; `calibration-guide.md` |
+| Causal inference | Support ≠ causation — by design, not a gap | Limitations footer on every report |
+| Table II residuals | 20 structural baseline gaps (trace_only shape, union false_safe / recall overshoot); all CIRDA cells pass | `KNOWN_GAPS` / `CALIBRATION.md`; CIRDA false_safe=0 exact |
 
 ## Verification Command
 

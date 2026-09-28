@@ -10,6 +10,7 @@ from cirda_core.domain.enums import EvidenceChannel, Relation
 from cirda_core.inference.fusion import ChannelObservation
 
 from cirda_bench.calibration import (
+    DIRECT_NOISE_OBS_RANGE,
     DIRECT_PRIMARY_OBS_RANGE,
     SECONDARY_DIRECT_OBS_RANGE,
     SECONDARY_DIRECT_RATE,
@@ -27,6 +28,7 @@ from cirda_bench.calibration import (
     WEAK_OBS_RANGE,
     WEAK_UNION_MIN_OBSERVATIONS,
     channel_keep_probability,
+    direct_noise_rate,
     low_loss_direct_extra_drop,
     telemetry_profile,
 )
@@ -264,15 +266,72 @@ def to_channel_observations(
     ]
 
 
+def inject_direct_noise(
+    records: list[EdgeTelemetry],
+    all_node_ids: list[str],
+    rng: random.Random,
+    *,
+    loss: float,
+    noise_rate: float,
+) -> list[EdgeTelemetry]:
+    """Append spurious edges carrying a few direct observations, post-loss.
+
+    Loss is applied here with the same all-or-nothing direct keep probability
+    so the main telemetry RNG stream is never consumed.
+    """
+    if noise_rate <= 0.0:
+        return records
+    existing = {(r.source_id, r.target_id) for r in records}
+    num_noise = int(round(len(records) * noise_rate))
+    augmented = list(records)
+    lo, hi = DIRECT_NOISE_OBS_RANGE
+    channels = (EvidenceChannel.TRACE, EvidenceChannel.DATABASE, EvidenceChannel.MESSAGING)
+
+    for i in range(num_noise):
+        for _ in range(32):
+            src = rng.choice(all_node_ids)
+            dst = rng.choice(all_node_ids)
+            if src == dst or (src, dst) in existing:
+                continue
+            existing.add((src, dst))
+            channel = rng.choice(channels)
+            count = rng.randint(lo, hi)
+            if rng.random() >= channel_keep_probability(channel, loss):
+                break
+            augmented.append(
+                EdgeTelemetry(
+                    edge_id=f"noise-direct-{i}-{src}->{dst}",
+                    source_id=src,
+                    target_id=dst,
+                    relation=Relation.CALLS,
+                    observations={channel: count},
+                    is_spurious=True,
+                )
+            )
+            break
+
+    return augmented
+
+
 def build_telemetry_bundle(
     edges: list[DependencyEdge],
     all_node_ids: list[str],
     loss: float,
     rng: random.Random,
+    *,
+    direct_noise_rng: random.Random | None = None,
 ) -> TelemetryBundle:
     """Generate full telemetry bundle at a given loss level."""
     profile = telemetry_profile(loss)
     base = generate_edge_telemetry(edges, rng, loss=loss)
     with_noise = inject_weak_noise(base, all_node_ids, rng, noise_rate=profile.weak_noise_rate)
     after_loss = apply_loss(with_noise, loss, rng)
+    if direct_noise_rng is not None:
+        after_loss = inject_direct_noise(
+            after_loss,
+            all_node_ids,
+            direct_noise_rng,
+            loss=loss,
+            noise_rate=direct_noise_rate(loss),
+        )
     return TelemetryBundle(edge_telemetry=tuple(after_loss), loss=loss)

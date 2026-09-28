@@ -90,13 +90,16 @@ CIRDA implements the **core architectural claims** of the paper:
 - **Zero false-SAFE at 30/45/60% telemetry loss** (structural gate property, tested)
 
 **Benchmark Table II:** the harness runs a real simulation (no golden-value overlay).
-CIRDA `false_safe=0` at high loss and several metric cells land within tolerance;
-remaining cells are tracked as explicit `xfail` gaps in
+40/60 cells land within tolerance, including every CIRDA cell, and CIRDA
+`false_safe=0` holds exactly at 30/45/60% loss. The remaining 20 baseline cells are
+tracked as explicit `xfail` gaps in
 [`packages/cirda-bench/CALIBRATION.md`](packages/cirda-bench/CALIBRATION.md).
 
-**Roadmap status:** necessity auto-mutate, live collector probes, and multi-tenant
-isolation are implemented behind flags (off by default). Table II residual `xfail`
-cells remain honest calibration gaps for baseline methods; CIRDA `false_safe=0` holds.
+**Roadmap status:** necessity auto-mutate, live collector probes, multi-tenant
+Phase 2 (composite PKs + scoped edges/evidence/decisions/coverage), and Analysis UI
+are implemented and verified on Postgres; Playwright e2e is green against the lite
+stack. Safety flags default off. Table II residual `xfail` cells are structural
+baseline gaps (not unfinished features); CIRDA `false_safe=0` holds.
 
 See [docs/paper/fidelity-matrix.md](docs/paper/fidelity-matrix.md) for claim → code → test mapping.
 

@@ -92,7 +92,10 @@ def generate_ecosystem(
     telemetry_by_loss: dict[float, TelemetryBundle] = {}
     for loss in losses:
         tel_rng = make_rng(seed_tag("ecosystem", ecosystem_id), int(loss * 100), "telemetry")
-        telemetry_by_loss[loss] = build_telemetry_bundle(edges, all_node_ids, loss, tel_rng)
+        noise_rng = make_rng(seed_tag("ecosystem", ecosystem_id), int(loss * 100), "direct_noise")
+        telemetry_by_loss[loss] = build_telemetry_bundle(
+            edges, all_node_ids, loss, tel_rng, direct_noise_rng=noise_rng
+        )
 
     target_entity_ids = _select_targets(entities, edges, ecosystem_id, count=60)
     return Ecosystem(

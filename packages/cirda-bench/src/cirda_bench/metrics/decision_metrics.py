@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import networkx as nx
-
 from cirda_core.config.policy import PolicyConfig
 from cirda_core.decision.gate import evaluate_gate
 from cirda_core.domain.enums import Verdict

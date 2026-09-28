@@ -6,12 +6,10 @@ from datetime import datetime
 from typing import Any
 
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from cirda_api.db.models.edge import Edge as EdgeModel
 from cirda_api.db.models.edge import EdgeChannelEvidence, EdgeVersion
 from cirda_api.db.repositories.base import RepositoryBase, utcnow
-from cirda_api.memory.store import MemoryStore
 from cirda_core.domain.edge import DependencyEdge
 from cirda_core.domain.enums import GraphLayer, Necessity, Relation
 
@@ -28,7 +26,7 @@ class EdgeRepository(RepositoryBase):
         limit: int = 100,
     ) -> tuple[list[dict[str, Any]], int]:
         if self.memory:
-            rows = list(self.memory.edges.values())
+            rows = self.memory.iter_tenant_edges()
             rows = self._filter_temporal(rows, as_of)
             if layer:
                 rows = [r for r in rows if r["layer"] == layer]
@@ -40,7 +38,8 @@ class EdgeRepository(RepositoryBase):
             return rows[offset : offset + limit], total
 
         assert self.session is not None
-        q = select(EdgeModel)
+        tenant = self.tenant_id
+        q = select(EdgeModel).where(EdgeModel.tenant_id == tenant)
         if layer:
             q = q.where(EdgeModel.layer == layer)
         if source_id:
@@ -53,7 +52,7 @@ class EdgeRepository(RepositoryBase):
             )
         result = await self.session.execute(q.offset(offset).limit(limit))
         items = result.scalars().all()
-        all_q = select(EdgeModel)
+        all_q = select(EdgeModel).where(EdgeModel.tenant_id == tenant)
         if as_of:
             all_q = all_q.where(EdgeModel.valid_from <= as_of).where(
                 (EdgeModel.valid_to.is_(None)) | (EdgeModel.valid_to > as_of)
@@ -63,24 +62,37 @@ class EdgeRepository(RepositoryBase):
 
     async def get_edge(self, edge_id: str, *, as_of: datetime | None = None) -> dict[str, Any] | None:
         if self.memory:
-            row = self.memory.edges.get(edge_id)
+            row = self.memory.get_edge(edge_id)
             if not row:
                 return None
             filtered = self._filter_temporal([row], as_of)
             return filtered[0] if filtered else None
 
         assert self.session is not None
-        row = await self.session.get(EdgeModel, edge_id)
+        result = await self.session.execute(
+            select(EdgeModel).where(
+                EdgeModel.tenant_id == self.tenant_id,
+                EdgeModel.edge_id == edge_id,
+            )
+        )
+        row = result.scalar_one_or_none()
         if not row:
             return None
         if as_of and (row.valid_from > as_of or (row.valid_to and row.valid_to <= as_of)):
             return None
         data = self._model_dict(row)
         ch_result = await self.session.execute(
-            select(EdgeChannelEvidence).where(EdgeChannelEvidence.edge_id == edge_id)
+            select(EdgeChannelEvidence).where(
+                EdgeChannelEvidence.tenant_id == self.tenant_id,
+                EdgeChannelEvidence.edge_id == edge_id,
+            )
         )
         data["channels"] = [
-            {"channel": c.channel, "observation_count": c.observation_count, "last_observed_at": c.last_observed_at}
+            {
+                "channel": c.channel,
+                "observation_count": c.observation_count,
+                "last_observed_at": c.last_observed_at,
+            }
             for c in ch_result.scalars().all()
         ]
         return data
@@ -91,13 +103,16 @@ class EdgeRepository(RepositoryBase):
             return self.memory.upsert_edge_record(edge, valid_from=vf)
 
         assert self.session is not None
+        tenant = self.tenant_id
         key = edge.edge_id or f"{edge.source_id}->{edge.target_id}:{edge.relation.value}"
         now = utcnow()
-        existing = await self.session.get(EdgeModel, key)
+        result = await self.session.execute(
+            select(EdgeModel).where(EdgeModel.tenant_id == tenant, EdgeModel.edge_id == key)
+        )
+        existing = result.scalar_one_or_none()
         if existing:
             existing.layer = edge.layer.value
             existing.confidence = edge.confidence
-            # Preserve operator annotations when fusion still reports unknown.
             if not (
                 existing.necessity != Necessity.UNKNOWN.value
                 and edge.necessity == Necessity.UNKNOWN
@@ -108,6 +123,7 @@ class EdgeRepository(RepositoryBase):
             row = existing
         else:
             row = EdgeModel(
+                tenant_id=tenant,
                 edge_id=key,
                 source_id=edge.source_id,
                 target_id=edge.target_id,
@@ -122,6 +138,7 @@ class EdgeRepository(RepositoryBase):
             )
             self.session.add(row)
         version = EdgeVersion(
+            tenant_id=tenant,
             edge_id=key,
             layer=edge.layer.value,
             confidence=edge.confidence,
@@ -138,12 +155,19 @@ class EdgeRepository(RepositoryBase):
             return self.memory.update_edge_necessity(edge_id, necessity.value)
 
         assert self.session is not None
-        row = await self.session.get(EdgeModel, edge_id)
+        result = await self.session.execute(
+            select(EdgeModel).where(
+                EdgeModel.tenant_id == self.tenant_id,
+                EdgeModel.edge_id == edge_id,
+            )
+        )
+        row = result.scalar_one_or_none()
         if not row:
             return None
         row.necessity = necessity.value
         row.updated_at = utcnow()
         version = EdgeVersion(
+            tenant_id=self.tenant_id,
             edge_id=edge_id,
             layer=row.layer,
             confidence=row.confidence,
@@ -166,8 +190,10 @@ class EdgeRepository(RepositoryBase):
             return
 
         assert self.session is not None
+        tenant = self.tenant_id
         result = await self.session.execute(
             select(EdgeChannelEvidence).where(
+                EdgeChannelEvidence.tenant_id == tenant,
                 EdgeChannelEvidence.edge_id == edge_id,
                 EdgeChannelEvidence.channel == channel,
             )
@@ -179,6 +205,7 @@ class EdgeRepository(RepositoryBase):
         else:
             self.session.add(
                 EdgeChannelEvidence(
+                    tenant_id=tenant,
                     edge_id=edge_id,
                     channel=channel,
                     observation_count=1,
@@ -213,6 +240,7 @@ class EdgeRepository(RepositoryBase):
             "confidence": row.confidence,
             "necessity": row.necessity,
             "evidence_count": row.evidence_count,
+            "tenant_id": getattr(row, "tenant_id", "default"),
             "last_observed_at": row.last_observed_at,
             "valid_from": row.valid_from,
             "valid_to": row.valid_to,

@@ -13,9 +13,12 @@ from cirda_api.db.types import UTCDateTime
 
 class EvidenceEvent(Base):
     __tablename__ = "evidence_events"
-    __table_args__ = (UniqueConstraint("idempotency_key", name="uq_evidence_idempotency"),)
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "idempotency_key", name="uq_evidence_tenant_idempotency"),
+    )
 
     event_id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(128), nullable=False, default="default", index=True)
     idempotency_key: Mapped[str | None] = mapped_column(String(256), nullable=True, index=True)
     source_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
     target_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)

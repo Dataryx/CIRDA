@@ -94,6 +94,7 @@ class EntityRepository(RepositoryBase):
                 EntityModel.entity_id == entity_id,
                 EntityModel.tenant_id == get_current_tenant_id(),
             )
+            .execution_options(populate_existing=True)
         )
         row = result.scalar_one_or_none()
         if not row:
@@ -123,25 +124,27 @@ class EntityRepository(RepositoryBase):
             )
 
         assert self.session is not None
-        result = await self.session.get(
-            EntityModel, entity_id, options=[selectinload(EntityModel.aliases)]
+        tenant = self.tenant_id
+        result = await self.session.execute(
+            select(EntityModel)
+            .options(selectinload(EntityModel.aliases))
+            .where(EntityModel.tenant_id == tenant, EntityModel.entity_id == entity_id)
         )
-        if result:
-            result.name = name
-            result.entity_type = entity_type
-            result.criticality = criticality
-            result.metadata_json = metadata or {}
-            result.updated_at = now
-            row = result
+        existing = result.scalar_one_or_none()
+        if existing:
+            existing.name = name
+            existing.entity_type = entity_type
+            existing.criticality = criticality
+            existing.metadata_json = metadata or {}
+            existing.updated_at = now
+            row = existing
         else:
-            from cirda_api.security.tenant import get_current_tenant_id
-
             row = EntityModel(
                 entity_id=entity_id,
                 entity_type=entity_type,
                 name=name,
                 criticality=criticality,
-                tenant_id=get_current_tenant_id(),
+                tenant_id=tenant,
                 metadata_json=metadata or {},
                 created_at=now,
                 updated_at=now,
@@ -151,7 +154,13 @@ class EntityRepository(RepositoryBase):
 
         if aliases is not None:
             desired = {a.strip() for a in aliases if a and a.strip()}
-            existing_by_alias = {a.alias: a for a in list(row.aliases or [])}
+            alias_rows = await self.session.execute(
+                select(AliasModel).where(
+                    AliasModel.tenant_id == tenant,
+                    AliasModel.entity_id == entity_id,
+                )
+            )
+            existing_by_alias = {a.alias: a for a in alias_rows.scalars().all()}
             for alias, model in existing_by_alias.items():
                 if alias not in desired:
                     await self.session.delete(model)
@@ -160,6 +169,7 @@ class EntityRepository(RepositoryBase):
                     self.session.add(
                         AliasModel(
                             alias_id=str(uuid.uuid4()),
+                            tenant_id=tenant,
                             entity_id=entity_id,
                             alias=alias,
                             source="api",
@@ -205,19 +215,30 @@ class EntityRepository(RepositoryBase):
             return set()
 
         if self.memory:
+            from cirda_api.security.tenant import get_current_tenant_id, parse_tenant_scoped_key
+
+            tenant = get_current_tenant_id()
+            prefix = f"{tenant}::"
             owners: set[str] = set()
-            for entity in self.memory.entities.values():
+            for store_key, entity in self.memory.entities.items():
+                if not store_key.startswith(prefix):
+                    continue
                 for candidate in entity.aliases:
                     if normalized_key(candidate) == key:
                         owners.add(entity.entity_id)
-            for entity_id, alias_rows in self.memory.aliases.items():
+            for store_key, alias_rows in self.memory.aliases.items():
+                if not store_key.startswith(prefix):
+                    continue
+                _, entity_id = parse_tenant_scoped_key(store_key)
                 for candidate, _src in alias_rows:
                     if normalized_key(candidate) == key:
                         owners.add(entity_id)
             return owners
 
         assert self.session is not None
-        result = await self.session.execute(select(AliasModel))
+        result = await self.session.execute(
+            select(AliasModel).where(AliasModel.tenant_id == self.tenant_id)
+        )
         return {
             row.entity_id
             for row in result.scalars().all()

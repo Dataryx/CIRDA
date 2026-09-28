@@ -19,6 +19,20 @@ def set_current_tenant_id(tenant_id: str) -> None:
     _tenant_id.set(tenant_id)
 
 
+def tenant_scoped_key(resource_id: str, *, tenant_id: str | None = None) -> str:
+    """Prefix a resource id with the active tenant for in-memory isolation."""
+    tid = tenant_id if tenant_id is not None else get_current_tenant_id()
+    return f"{tid}::{resource_id}"
+
+
+def parse_tenant_scoped_key(key: str) -> tuple[str, str]:
+    """Split ``tenant::id``; if no separator, treat as ``(default, key)``."""
+    if "::" not in key:
+        return "default", key
+    tenant, resource_id = key.split("::", 1)
+    return tenant, resource_id
+
+
 async def resolve_tenant(
     settings: Settings,
     x_cirda_tenant: str | None = Header(default=None, alias="X-CIRDA-Tenant"),

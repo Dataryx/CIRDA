@@ -52,6 +52,20 @@ CIRDA uses three primary calibration parameters aligned with the paper:
 
 Do not merge calibration changes that regress golden benchmarks.
 
+## Weak-signal weights
+
+Channel reliabilities `r_k` and saturation `τ_k` are heuristic. Before changing
+them, measure how fused support S tracks ground truth:
+
+```bash
+uv run python packages/cirda-bench/scripts/support_reliability.py 30
+```
+
+The report gives per-loss reliability bins, ECE and Brier for all edges and for
+weak-only edges. S should stay conservative (real-edge rate ≥ S); a weight change
+that makes S over-confident above θ_p moves the gate towards false SAFE. See
+`packages/cirda-bench/CALIBRATION.md` for the current numbers.
+
 ## Production
 
 Store calibration in DB via calibration API; env vars serve as bootstrap defaults only.

@@ -55,9 +55,19 @@ class MemoryStore:
     _lock: threading.RLock = field(default_factory=threading.RLock)
 
     def _entity_key(self, entity_id: str) -> str:
+        from cirda_api.security.tenant import tenant_scoped_key
+
+        return tenant_scoped_key(entity_id)
+
+    def _resource_key(self, resource_id: str) -> str:
+        from cirda_api.security.tenant import tenant_scoped_key
+
+        return tenant_scoped_key(resource_id)
+
+    def _current_tenant(self) -> str:
         from cirda_api.security.tenant import get_current_tenant_id
 
-        return f"{get_current_tenant_id()}::{entity_id}"
+        return get_current_tenant_id()
 
     def upsert_entity_record(
         self,
@@ -85,9 +95,7 @@ class MemoryStore:
                 aliases=alias_set,
             )
             self.entities[key] = entity
-            from cirda_api.security.tenant import get_current_tenant_id
-
-            tenant = get_current_tenant_id()
+            tenant = self._current_tenant()
             self.entity_tenants[key] = tenant
             if metadata is not None or key not in self.entity_metadata:
                 self.entity_metadata[key] = dict(metadata or {})
@@ -126,19 +134,24 @@ class MemoryStore:
 
     def add_evidence(self, event: EvidenceEvent, idempotency_key: str | None = None) -> tuple[EvidenceEvent, bool]:
         with self._lock:
-            if idempotency_key and idempotency_key in self.idempotency_index:
-                existing_id = self.idempotency_index[idempotency_key]
-                return self.evidence_events[existing_id], False
-            if event.event_id in self.evidence_events:
-                return self.evidence_events[event.event_id], False
-            self.evidence_events[event.event_id] = event
+            event_key = self._resource_key(event.event_id)
             if idempotency_key:
-                self.idempotency_index[idempotency_key] = event.event_id
+                idem_key = self._resource_key(idempotency_key)
+                if idem_key in self.idempotency_index:
+                    existing_id = self.idempotency_index[idem_key]
+                    return self.evidence_events[existing_id], False
+            if event_key in self.evidence_events:
+                return self.evidence_events[event_key], False
+            self.evidence_events[event_key] = event
+            if idempotency_key:
+                self.idempotency_index[self._resource_key(idempotency_key)] = event_key
             return event, True
 
     def upsert_edge_record(self, edge: DependencyEdge, *, valid_from: datetime, valid_to: datetime | None = None) -> dict[str, Any]:
-        key = edge.edge_id or f"{edge.source_id}->{edge.target_id}:{edge.relation.value}"
+        edge_id = edge.edge_id or f"{edge.source_id}->{edge.target_id}:{edge.relation.value}"
+        key = self._resource_key(edge_id)
         now = _utcnow()
+        tenant = self._current_tenant()
         with self._lock:
             existing = self.edges.get(key)
             necessity = edge.necessity.value
@@ -150,7 +163,7 @@ class MemoryStore:
             ):
                 necessity = existing["necessity"]
             record = {
-                "edge_id": key,
+                "edge_id": edge_id,
                 "source_id": edge.source_id,
                 "target_id": edge.target_id,
                 "relation": edge.relation.value,
@@ -158,6 +171,7 @@ class MemoryStore:
                 "confidence": edge.confidence,
                 "necessity": necessity,
                 "evidence_count": edge.evidence_count,
+                "tenant_id": tenant,
                 "last_observed_at": datetime.fromtimestamp(edge.last_observed_epoch, tz=timezone.utc)
                 if edge.last_observed_epoch
                 else now,
@@ -171,17 +185,19 @@ class MemoryStore:
             return record
 
     def update_edge_necessity(self, edge_id: str, necessity: str) -> dict[str, Any] | None:
+        key = self._resource_key(edge_id)
         with self._lock:
-            row = self.edges.get(edge_id)
+            row = self.edges.get(key)
             if not row:
                 return None
             row = {**row, "necessity": necessity, "updated_at": _utcnow()}
-            self.edges[edge_id] = row
+            self.edges[key] = row
             return deepcopy(row)
 
     def increment_channel_evidence(self, edge_id: str, channel: str, observed_at: datetime) -> None:
+        key = self._resource_key(edge_id)
         with self._lock:
-            ch_map = self.edge_channel_evidence.setdefault(edge_id, {})
+            ch_map = self.edge_channel_evidence.setdefault(key, {})
             entry = ch_map.get(channel, {"observation_count": 0, "last_observed_at": observed_at})
             entry["observation_count"] += 1
             entry["last_observed_at"] = observed_at
@@ -190,7 +206,8 @@ class MemoryStore:
     def create_decision(self, record: dict[str, Any]) -> dict[str, Any]:
         with self._lock:
             decision_id = record.get("decision_id") or str(uuid.uuid4())
-            record = {**record, "decision_id": decision_id}
+            key = self._resource_key(decision_id)
+            record = {**record, "decision_id": decision_id, "tenant_id": self._current_tenant()}
             executions = record.get("runbook_executions")
             if executions is None:
                 executions = []
@@ -208,13 +225,14 @@ class MemoryStore:
                         }
                     )
             record = {**record, "runbook_executions": executions}
-            self.decisions[decision_id] = deepcopy(record)
-            self.runbook_executions[decision_id] = deepcopy(executions)
-            return self.decisions[decision_id]
+            self.decisions[key] = deepcopy(record)
+            self.runbook_executions[key] = deepcopy(executions)
+            return self.decisions[key]
 
     def list_runbook_executions(self, decision_id: str) -> list[dict[str, Any]]:
+        key = self._resource_key(decision_id)
         with self._lock:
-            return deepcopy(self.runbook_executions.get(decision_id, []))
+            return deepcopy(self.runbook_executions.get(key, []))
 
     def update_runbook_execution(
         self,
@@ -224,8 +242,9 @@ class MemoryStore:
         status: str,
         notes: str | None = None,
     ) -> dict[str, Any] | None:
+        key = self._resource_key(decision_id)
         with self._lock:
-            rows = self.runbook_executions.get(decision_id)
+            rows = self.runbook_executions.get(key)
             if not rows:
                 return None
             now = _utcnow()
@@ -242,18 +261,93 @@ class MemoryStore:
                         updated["started_at"] = now
                     updated["completed_at"] = now
                 rows[i] = updated
-                self.runbook_executions[decision_id] = rows
-                if decision_id in self.decisions:
-                    self.decisions[decision_id]["runbook_executions"] = deepcopy(rows)
+                self.runbook_executions[key] = rows
+                if key in self.decisions:
+                    self.decisions[key]["runbook_executions"] = deepcopy(rows)
                 return deepcopy(updated)
             return None
 
     def link_supersedes(self, new_id: str, old_id: str) -> None:
         with self._lock:
-            if old_id in self.decisions:
-                self.decisions[old_id]["superseded_by_id"] = new_id
-            if new_id in self.decisions:
-                self.decisions[new_id]["supersedes_id"] = old_id
+            old_key = self._resource_key(old_id)
+            new_key = self._resource_key(new_id)
+            if old_key in self.decisions:
+                self.decisions[old_key]["superseded_by_id"] = new_id
+            if new_key in self.decisions:
+                self.decisions[new_key]["supersedes_id"] = old_id
+
+    def get_decision(self, decision_id: str) -> dict[str, Any] | None:
+        key = self._resource_key(decision_id)
+        with self._lock:
+            row = self.decisions.get(key)
+            return deepcopy(row) if row else None
+
+    def iter_tenant_edges(self) -> list[dict[str, Any]]:
+        prefix = f"{self._current_tenant()}::"
+        with self._lock:
+            return [deepcopy(v) for k, v in self.edges.items() if k.startswith(prefix)]
+
+    def get_edge(self, edge_id: str) -> dict[str, Any] | None:
+        key = self._resource_key(edge_id)
+        with self._lock:
+            row = self.edges.get(key)
+            return deepcopy(row) if row else None
+
+    def iter_tenant_evidence(self) -> list[EvidenceEvent]:
+        prefix = f"{self._current_tenant()}::"
+        with self._lock:
+            return [v for k, v in self.evidence_events.items() if k.startswith(prefix)]
+
+    def get_evidence(self, event_id: str) -> EvidenceEvent | None:
+        key = self._resource_key(event_id)
+        with self._lock:
+            return self.evidence_events.get(key)
+
+    def iter_tenant_decisions(self) -> list[dict[str, Any]]:
+        prefix = f"{self._current_tenant()}::"
+        with self._lock:
+            return [deepcopy(v) for k, v in self.decisions.items() if k.startswith(prefix)]
+
+    def iter_tenant_coverage_snapshots(self) -> list[dict[str, Any]]:
+        tenant = self._current_tenant()
+        with self._lock:
+            return [
+                deepcopy(s)
+                for s in self.coverage_snapshots
+                if s.get("tenant_id", "default") == tenant
+            ]
+
+    def append_coverage_snapshot(self, record: dict[str, Any]) -> dict[str, Any]:
+        with self._lock:
+            stamped = {**record, "tenant_id": self._current_tenant()}
+            self.coverage_snapshots.append(stamped)
+            return deepcopy(stamped)
+
+    def get_channel_health(self, channel: str) -> dict[str, Any] | None:
+        key = self._resource_key(channel)
+        with self._lock:
+            row = self.channel_health.get(key)
+            return deepcopy(row) if row else None
+
+    def set_channel_health(self, channel: str, payload: dict[str, Any]) -> None:
+        key = self._resource_key(channel)
+        with self._lock:
+            self.channel_health[key] = {**payload, "tenant_id": self._current_tenant()}
+
+    def iter_tenant_channel_health(self) -> list[dict[str, Any]]:
+        prefix = f"{self._current_tenant()}::"
+        with self._lock:
+            return [deepcopy(v) for k, v in self.channel_health.items() if k.startswith(prefix)]
+
+    def get_probe_restorations(self, entity_id: str) -> set[str]:
+        key = self._resource_key(entity_id)
+        with self._lock:
+            return set(self.probe_restorations.get(key, set()))
+
+    def set_probe_restorations(self, entity_id: str, channels: set[str]) -> None:
+        key = self._resource_key(entity_id)
+        with self._lock:
+            self.probe_restorations[key] = set(channels)
 
     def snapshot_copy(self) -> MemoryStore:
         with self._lock:

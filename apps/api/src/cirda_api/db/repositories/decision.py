@@ -31,6 +31,7 @@ class DecisionRepository(RepositoryBase):
         now = utcnow()
         row = DecisionModel(
             decision_id=record["decision_id"],
+            tenant_id=self.tenant_id,
             entity_id=record["entity_id"],
             verdict=record["verdict"],
             coverage=record["coverage"],
@@ -82,10 +83,16 @@ class DecisionRepository(RepositoryBase):
 
     async def get(self, decision_id: str) -> dict[str, Any] | None:
         if self.memory:
-            return self.memory.decisions.get(decision_id)
+            return self.memory.get_decision(decision_id)
 
         assert self.session is not None
-        row = await self.session.get(DecisionModel, decision_id)
+        result = await self.session.execute(
+            select(DecisionModel).where(
+                DecisionModel.decision_id == decision_id,
+                DecisionModel.tenant_id == self.tenant_id,
+            )
+        )
+        row = result.scalar_one_or_none()
         if not row:
             return None
         paths = (
@@ -99,6 +106,7 @@ class DecisionRepository(RepositoryBase):
         return {
             "decision_id": row.decision_id,
             "entity_id": row.entity_id,
+            "tenant_id": row.tenant_id,
             "verdict": row.verdict,
             "coverage": row.coverage,
             "truncated": row.truncated,
@@ -217,15 +225,29 @@ class DecisionRepository(RepositoryBase):
         limit: int = 20,
     ) -> tuple[list[dict[str, Any]], int]:
         if self.memory:
-            rows = [d for d in self.memory.decisions.values() if d["entity_id"] == entity_id]
+            rows = [d for d in self.memory.iter_tenant_decisions() if d["entity_id"] == entity_id]
             total = len(rows)
             return rows[offset : offset + limit], total
 
         assert self.session is not None
-        q = select(DecisionModel).where(DecisionModel.entity_id == entity_id).order_by(DecisionModel.created_at.desc())
+        q = (
+            select(DecisionModel)
+            .where(
+                DecisionModel.tenant_id == self.tenant_id,
+                DecisionModel.entity_id == entity_id,
+            )
+            .order_by(DecisionModel.created_at.desc())
+        )
         result = await self.session.execute(q.offset(offset).limit(limit))
         items = result.scalars().all()
-        all_rows = (await self.session.execute(select(DecisionModel).where(DecisionModel.entity_id == entity_id))).scalars().all()
+        all_rows = (
+            await self.session.execute(
+                select(DecisionModel).where(
+                    DecisionModel.tenant_id == self.tenant_id,
+                    DecisionModel.entity_id == entity_id,
+                )
+            )
+        ).scalars().all()
         return [await self.get(i.decision_id) for i in items if i], len(all_rows)  # type: ignore[misc]
 
     async def mark_superseded(self, old_id: str, new_id: str) -> None:
@@ -234,8 +256,22 @@ class DecisionRepository(RepositoryBase):
             return
 
         assert self.session is not None
-        old = await self.session.get(DecisionModel, old_id)
-        new = await self.session.get(DecisionModel, new_id)
+        old = (
+            await self.session.execute(
+                select(DecisionModel).where(
+                    DecisionModel.decision_id == old_id,
+                    DecisionModel.tenant_id == self.tenant_id,
+                )
+            )
+        ).scalar_one_or_none()
+        new = (
+            await self.session.execute(
+                select(DecisionModel).where(
+                    DecisionModel.decision_id == new_id,
+                    DecisionModel.tenant_id == self.tenant_id,
+                )
+            )
+        ).scalar_one_or_none()
         if old:
             old.superseded_by_id = new_id
         if new:
